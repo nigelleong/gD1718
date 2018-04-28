@@ -27,7 +27,7 @@ import java.util.UUID;
 
 public class robotControl extends AppCompatActivity implements View.OnClickListener {
 
-    Button btnUp, btnDown, btnLeft, btnRight;
+    Button btnUp, btnDown, btnLeft, btnRight, btnFoldSeat, btnFoldWings, btnBlinkLED;
     String address = null;
     private ProgressDialog progress;
     BluetoothAdapter myBluetooth = null;
@@ -48,6 +48,9 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
         btnDown = (Button)findViewById(R.id.btn_down);
         btnLeft = (Button)findViewById(R.id.btn_left);
         btnRight = (Button)findViewById(R.id.btn_right);
+        btnFoldSeat = (Button)findViewById(R.id.btn_fold_seat);
+        btnFoldWings = (Button)findViewById(R.id.btn_fold_wings);
+        btnBlinkLED = (Button)findViewById(R.id.btn_blink_led);
 
         new ConnectBT().execute();
 
@@ -55,6 +58,9 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
         btnDown.setOnClickListener(this);
         btnLeft.setOnClickListener(this);
         btnRight.setOnClickListener(this);
+        btnFoldSeat.setOnClickListener(this);
+        btnFoldWings.setOnClickListener(this);
+        btnBlinkLED.setOnClickListener(this);
 
     }
 
@@ -63,55 +69,112 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
         switch(view.getId()) {
             case R.id.btn_up:
                 robotGoUp();
+                break;
             case R.id.btn_down:
                 robotGoDown();
+                break;
             case R.id.btn_left:
                 robotGoLeft();
+                break;
             case R.id.btn_right:
                 robotGoRight();
+                break;
+            case R.id.btn_fold_seat:
+                robotFoldSeat();
+                break;
+            case R.id.btn_fold_wings:
+                robotFoldWings();
+                break;
+            case R.id.btn_blink_led:
+                arduinoBlinkLED();
+                break;
             default:
                 break;
         }
     }
 
+    private void robotFoldSeat() {
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("S||||".toString().getBytes());
+                toastMsg("Command 'fold seat' sent");
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+        toastMsg("Test command 'fold seat' sent");
+    }
+
+    private void robotFoldWings() {
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("W||||".toString().getBytes());
+                toastMsg("Command 'fold wings' sent");
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+        toastMsg("Test command 'fold wings' sent");
+    }
+
     private void robotGoUp() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("2000|2000|90".toString().getBytes());
+                btSocket.getOutputStream().write("M|2000|2000|90|".toString().getBytes());
+                toastMsg("Command 'up' sent");
             } catch (IOException e) {
-                toastMsg("Bluetooth device is disconnected");
+                toastMsg("Error");
             }
         }
+        toastMsg("Test command 'up' sent");
     }
 
     private void robotGoDown() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("2000|2000|270".toString().getBytes());
+                btSocket.getOutputStream().write("M|2000|2000|270|".toString().getBytes());
+                toastMsg("Command 'down' sent");
             } catch (IOException e) {
-                toastMsg("Bluetooth device is disconnected");
+                toastMsg("Error");
             }
         }
+        toastMsg("Test command 'down' sent");
     }
 
     private void robotGoLeft() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("2000|2000|180".toString().getBytes());
+                btSocket.getOutputStream().write("M|2000|2000|180|".toString().getBytes());
+                toastMsg("Command 'left' sent");
             } catch (IOException e) {
-                toastMsg("Bluetooth device is disconnected");
+                toastMsg("Error");
             }
         }
+        toastMsg("Test command 'left' sent");
     }
 
     private void robotGoRight() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("2000|2000|0".toString().getBytes());
+                btSocket.getOutputStream().write("M|2000|2000|0|".toString().getBytes());
+                toastMsg("Command 'right' sent");
             } catch (IOException e) {
-                toastMsg("Bluetooth device is disconnected");
+                toastMsg("Error");
             }
         }
+        toastMsg("Test command 'right' sent");
+    }
+
+    private void arduinoBlinkLED() {
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("B|2|||".toString().getBytes());
+                toastMsg("Command 'blink led 2 times' sent");
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+        toastMsg("Test command 'blink led 2 times' sent");
     }
 
     private void toastMsg(String s) {
