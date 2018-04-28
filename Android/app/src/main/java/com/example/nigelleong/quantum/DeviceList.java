@@ -45,8 +45,7 @@ public class DeviceList extends AppCompatActivity implements View.OnClickListene
             //Show a mensag. that the device has no bluetooth adapter
             Toast.makeText(getApplicationContext(), "Bluetooth Device Not Available", Toast.LENGTH_LONG).show();
             finish();
-        }
-        else if(!myBluetooth.isEnabled()) {
+        } else if(!myBluetooth.isEnabled()) {
             //Ask to turn on bluetooth
             Intent turnBTon = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(turnBTon,1);

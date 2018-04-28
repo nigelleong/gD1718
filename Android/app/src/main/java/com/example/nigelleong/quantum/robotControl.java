@@ -28,6 +28,7 @@ import java.util.UUID;
 public class robotControl extends AppCompatActivity implements View.OnClickListener {
 
     Button btnUp, btnDown, btnLeft, btnRight, btnFoldSeat, btnFoldWings, btnBlinkLED;
+    Button btnPeak, btnOffPeak;
     String address = null;
     private ProgressDialog progress;
     BluetoothAdapter myBluetooth = null;
@@ -35,6 +36,9 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
     private boolean isBtConnected = false;
     //SPP UUID. Look for it
     static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+
+    byte[] buffer = new byte[1024];  // buffer store for the stream
+    int bytes; // bytes returned from read()
 
 
     @Override
@@ -51,6 +55,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
         btnFoldSeat = (Button)findViewById(R.id.btn_fold_seat);
         btnFoldWings = (Button)findViewById(R.id.btn_fold_wings);
         btnBlinkLED = (Button)findViewById(R.id.btn_blink_led);
+        btnPeak = (Button)findViewById(R.id.btn_peak);
 
         new ConnectBT().execute();
 
@@ -61,6 +66,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
         btnFoldSeat.setOnClickListener(this);
         btnFoldWings.setOnClickListener(this);
         btnBlinkLED.setOnClickListener(this);
+        btnPeak.setOnClickListener(this);
 
     }
 
@@ -88,6 +94,9 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
             case R.id.btn_blink_led:
                 arduinoBlinkLED();
                 break;
+            case R.id.btn_peak:
+                configPeak();
+                break;
             default:
                 break;
         }
@@ -102,7 +111,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
                 toastMsg("Error");
             }
         }
-        toastMsg("Test command 'fold seat' sent");
+//        toastMsg("Test command 'fold seat' sent");
     }
 
     private void robotFoldWings() {
@@ -114,7 +123,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
                 toastMsg("Error");
             }
         }
-        toastMsg("Test command 'fold wings' sent");
+//        toastMsg("Test command 'fold wings' sent");
     }
 
     private void robotGoUp() {
@@ -126,7 +135,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
                 toastMsg("Error");
             }
         }
-        toastMsg("Test command 'up' sent");
+//        toastMsg("Test command 'up' sent");
     }
 
     private void robotGoDown() {
@@ -138,7 +147,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
                 toastMsg("Error");
             }
         }
-        toastMsg("Test command 'down' sent");
+//        toastMsg("Test command 'down' sent");
     }
 
     private void robotGoLeft() {
@@ -150,7 +159,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
                 toastMsg("Error");
             }
         }
-        toastMsg("Test command 'left' sent");
+//        toastMsg("Test command 'left' sent");
     }
 
     private void robotGoRight() {
@@ -162,7 +171,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
                 toastMsg("Error");
             }
         }
-        toastMsg("Test command 'right' sent");
+//        toastMsg("Test command 'right' sent");
     }
 
     private void arduinoBlinkLED() {
@@ -174,7 +183,25 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
                 toastMsg("Error");
             }
         }
-        toastMsg("Test command 'blink led 2 times' sent");
+//        toastMsg("Test command 'blink led 2 times' sent");
+    }
+
+    private void configPeak() {
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("W|200|200|90|".toString().getBytes());
+                bytes = btSocket.getInputStream().read(buffer);
+                btSocket.getOutputStream().write("W|200|200|180|".toString().getBytes());
+                bytes = btSocket.getInputStream().read(buffer);
+                btSocket.getOutputStream().write("W|200|200|270|".toString().getBytes());
+                bytes = btSocket.getInputStream().read(buffer);
+                btSocket.getOutputStream().write("W|200|200|0|".toString().getBytes());
+                toastMsg("Config Peak completed");
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+//        toastMsg("Test command 'Config Peak completed' sent");
     }
 
     private void toastMsg(String s) {
