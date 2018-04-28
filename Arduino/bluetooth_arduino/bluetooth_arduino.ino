@@ -20,7 +20,9 @@ void loop()
     char  input; // stores incoming character from other device
     char  command_buffer[10];
     int   i = 0;
-    int   arg = 0;
+    int   arg1 = 0;
+    int   arg2 = 0;
+    int   arg3 = 0;
 
     while (1){
         if ( BT.available() ) {
@@ -37,8 +39,22 @@ void loop()
 
     //Converts subsequent characters in the array into integer as function argument
     while (command_buffer[i] != '|') {
-        arg *= 10;
-        arg = arg + (command_buffer[i] - 48);
+        arg1 *= 10;
+        arg1 = arg1 + (command_buffer[i] - 48);
+        i++;
+    }
+
+    i++;
+    while (command_buffer[i] != '|') {
+        arg2 *= 10;
+        arg2 = arg2 + (command_buffer[i] - 48);
+        i++;
+    }
+
+    i++;
+    while (command_buffer[i] != '|') {
+        arg3 *= 10;
+        arg3 = arg3 + (command_buffer[i] - 48);
         i++;
     }
   
@@ -47,13 +63,13 @@ void loop()
      *  
      *  Command Legends:
      *  ----------------
-     *  W ---> Move Forward
-     *  A ---> Move Left
-     *  D ---> Move Right
-     *  S ---> Move Back
      *  Z ---> Read Sensor Value
      *  C ---> Calibrate Bot
      *  R ---> Resend reply string
+     *  
+     *  M ---> Robot moves
+     *  S---> Robot fold seat
+     *  W---> Robot fold wings
      *  
      *  1 ---> On LED
      *  0 ---> Off LED
@@ -73,35 +89,31 @@ void loop()
 
       case 'B':                     /* blink led */
           BT.println("Blink LED");
-          blinkLED(arg);
-          
+          blinkLED(arg1);
           break;
-      
-      case 'W':                     /* turn off led */
-          //call function : go straight one grid
-          moveForward(arg);
+
+      case 'M':                     /* move robot */
+          //call function : move robot with |Xvelocity|Yvelocity|
+          robotMove(arg1, arg2, arg3);
           break;
-          
-      case 'D':                     /* turn off led */
-          //call function : go right one grid
+
+      case 'W':                     /* move robot */
+          //call function : move robot with |Xvelocity|Yvelocity|
+          robotFoldWings(arg1, arg2, arg3);
           break;
-          
-      case 'A':                     /* turn off led */
-          //call function : go left one grid
-          break;
-          
-      case 'S':                     /* turn off led */
-          //call function : go back one grid
+
+      case 'S':                     /* move robot */
+          //call function : move robot with |Xvelocity|Yvelocity|
+          robotFoldSeat(arg1, arg2, arg3);
           break;
           
       default :                     /* help */ 
-          BT.println("Send '1' to turn LED on");
-          BT.println("Send '0' to turn LED off");
-          BT.println("Send 'B5' to blink LED 5 times");
-          BT.println("Send 'W1' to go straight 1 grid");
-          BT.println("Send 'S1' to go back 1 grid");
-          BT.println("Send 'A1' to go left 1 grid");
-          BT.println("Send 'D1' to go right 1 grid");
+          BT.println("Send '1||||' to turn LED on");
+          BT.println("Send '0||||' to turn LED off");
+          BT.println("Send 'B|5|||' to blink LED 5 times");
+          BT.println("Send 'W||||' to fold wings");
+          BT.println("Send 'S||||' to fold seat");
+          BT.println("Send 'M|2000|1000|0|' to move 2000mm/sec in x, 1000mm/sec, 0 change in degree");
     }
 }
 
@@ -115,8 +127,24 @@ void blinkLED (int times){
     }
 }
 
-void moveForward  (int numGrid){
+void  robotMove ( int arg1,
+                  int arg2,
+                  int arg3)
+{
     
 }
 
+void  robotFoldSeat ( int arg1,
+                      int arg2,
+                      int arg3)
+{
+    
+}
+
+void  robotFoldWings  ( int arg1,
+                        int arg2,
+                        int arg3)
+{
+    
+}
 
