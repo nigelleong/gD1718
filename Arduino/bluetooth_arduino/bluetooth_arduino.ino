@@ -20,7 +20,7 @@ void loop()
 {
     /* Declare global variables */
     char  input; // stores incoming character from other device
-    char  command_buffer[10];
+    char  command_buffer[20];
     int   i = 0;
     int   arg1 = 0;
     int   arg2 = 0;
@@ -31,8 +31,8 @@ void loop()
             input = ( BT.read() );
             command_buffer[i] = input;
             i++;
-            if (input == '|'){       /* setting pointer back to argument */
-                i = 1;
+            if (input == '!'){       /* setting pointer back to argument */
+                i = 2;
                 break;
             }
         }
@@ -45,7 +45,7 @@ void loop()
         arg1 = arg1 + (command_buffer[i] - 48);
         i++;
     }
-  Serial.println(command_buffer[0]);
+
     i++;
     while (command_buffer[i] != '|') {
         arg2 *= 10;
@@ -54,7 +54,7 @@ void loop()
     }
 
     i++;
-    while (command_buffer[i] != '|') {
+    while (command_buffer[i] != '!') {
         arg3 *= 10;
         arg3 = arg3 + (command_buffer[i] - 48);
         i++;
@@ -110,12 +110,12 @@ void loop()
           break;
           
       default :                     /* help */ 
-          BT.println("Send '1||||' to turn LED on");
-          BT.println("Send '0||||' to turn LED off");
-          BT.println("Send 'B|5|||' to blink LED 5 times");
-          BT.println("Send 'W||||' to fold wings");
-          BT.println("Send 'S||||' to fold seat");
-          BT.println("Send 'M|2000|1000|0|' to move 2000mm/sec in x, 1000mm/sec, 0 change in degree");
+          BT.println("Send '1|||!' to turn LED on");
+          BT.println("Send '0|||!' to turn LED off");
+          BT.println("Send 'B|5||!' to blink LED 5 times");
+          BT.println("Send 'W|||!' to fold wings");
+          BT.println("Send 'S|||!' to fold seat");
+          BT.println("Send 'M|2000|1000|0!' to move 2000mm/sec in x, 1000mm/sec, 0 change in degree");
     }
 }
 
