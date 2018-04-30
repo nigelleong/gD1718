@@ -6,6 +6,8 @@ SoftwareSerial BT(10, 11);
 // connect BT Vcc to 5V, GND to GND
 void setup()  
 {
+
+    Serial.begin(9600);
     // set digital pin to control as an output
     pinMode(LED_BUILTIN, OUTPUT);
     BT.begin(9600);
@@ -43,7 +45,7 @@ void loop()
         arg1 = arg1 + (command_buffer[i] - 48);
         i++;
     }
-
+  Serial.println(command_buffer[0]);
     i++;
     while (command_buffer[i] != '|') {
         arg2 *= 10;
@@ -76,7 +78,7 @@ void loop()
      *  B ---> Blink LED
     ----------------------------------------------*/
 
-    switch (command_buf[0]) {
+    switch (command_buffer[0]) {
       case '1':                     /* turn on led */
           BT.println("LED on");
           digitalWrite(LED_BUILTIN, HIGH);
@@ -93,7 +95,7 @@ void loop()
           break;
 
       case 'M':                     /* move robot */
-          //call function : move robot with |Xvelocity|Yvelocity|
+          //call function : move robot with |Xvelocity|Yvelocity|s
           robotMove(arg1, arg2, arg3);
           break;
 
@@ -131,6 +133,9 @@ void  robotMove ( int arg1,
                   int arg2,
                   int arg3)
 {
+  Serial.println(arg1);
+  Serial.println(arg2);
+  Serial.println(arg3);
     
 }
 

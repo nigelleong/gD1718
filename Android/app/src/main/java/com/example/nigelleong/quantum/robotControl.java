@@ -100,7 +100,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
                 configPeak();
                 break;
             case R.id.btn1:
-                myFunc();
+
                 break;
             default:
                 break;
