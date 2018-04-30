@@ -28,7 +28,7 @@ import java.util.UUID;
 public class robotControl extends AppCompatActivity implements View.OnClickListener {
 
     Button btnUp, btnDown, btnLeft, btnRight, btnFoldSeat, btnFoldWings, btnBlinkLED;
-    Button btnPeak, btnOffPeak;
+    Button btnPeak, btnOffPeak, btn1;
     String address = null;
     private ProgressDialog progress;
     BluetoothAdapter myBluetooth = null;
@@ -56,6 +56,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
         btnFoldWings = (Button)findViewById(R.id.btn_fold_wings);
         btnBlinkLED = (Button)findViewById(R.id.btn_blink_led);
         btnPeak = (Button)findViewById(R.id.btn_peak);
+        btn1 = (Button)findViewById(R.id.btn1);
 
         new ConnectBT().execute();
 
@@ -67,6 +68,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
         btnFoldWings.setOnClickListener(this);
         btnBlinkLED.setOnClickListener(this);
         btnPeak.setOnClickListener(this);
+        btn1.setOnClickListener(this);
 
     }
 
@@ -96,6 +98,9 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.btn_peak:
                 configPeak();
+                break;
+            case R.id.btn1:
+                mtFunc();
                 break;
             default:
                 break;

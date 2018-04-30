@@ -90,4 +90,13 @@
         android:layout_marginTop="47dp"
         android:text="Peak" />
 
+    <Button
+        android:id="@+id/btn1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/btn_fold_seat"
+        android:layout_below="@+id/btn_peak"
+        android:layout_marginTop="48dp"
+        android:text="btn1" />
+
 </RelativeLayout>
