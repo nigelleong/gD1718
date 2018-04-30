@@ -17,7 +17,7 @@ void setup()
 void loop() 
 {
     /* Declare global variables */
-    char  input; // stores incoming character from other device
+    byte  input; // stores incoming character from other device
     char  command_buffer[20];
     int   i = 0;
     int   arg1 = 0;
@@ -26,11 +26,15 @@ void loop()
 
     while (1){
         if ( BT.available() ) {
-            input = ( BT.read() );
+            input = (char)BT.read();
+            Serial.print("got input: ");
+            Serial.write(input);
+            Serial.print("\n");
             command_buffer[i] = input;
             i++;
             if (input == '!'){       /* setting pointer back to argument */
                 i = 2;
+                Serial.println("Input=!");
                 break;
             }
         }
@@ -76,6 +80,7 @@ void loop()
      *  B ---> Blink LED
     ----------------------------------------------*/
 
+<<<<<<< HEAD
     switch (command_buf[0]) {
       case '1':                     /* turn on led */
       {
@@ -103,9 +108,41 @@ void loop()
       }
       case 'W':                     /* move robot */
       {
+=======
+    switch (command_buffer[0]) {
+      case '1':     
+      {/* turn on led */
+          BT.println("LED on");
+          digitalWrite(LED_BUILTIN, HIGH);
+          break;
+    } 
+      case '0': 
+      {/* turn off led */
+          BT.println("LED off");
+          digitalWrite(LED_BUILTIN, LOW);
+          break;
+    }
+      case 'B': 
+      {/* blink led */
+          BT.println("Blink LED");
+          blinkLED(arg1);
+          break;
+    }
+      case 'M': 
+      {/* move robot */
+          //call function : move robot with |Xvelocity|Yvelocity|s
+          Serial.println("MOVE");
+          robotMove(arg1, arg2, arg3);
+          break;
+    }
+      case 'W':    
+    {/* move robot */
+>>>>>>> 39e8b156bf2d14895cd440016d7692bd88ece4eb
           //call function : move robot with |Xvelocity|Yvelocity|
+          Serial.println("MOVE");
           robotFoldWings(arg1, arg2, arg3);
           break;
+<<<<<<< HEAD
       }
       case 'S':                     /* move robot */
       {
@@ -123,6 +160,25 @@ void loop()
           BT.println("Send 'M|2000|1000|0|' to move 2000mm/sec in x, 1000mm/sec, 0 change in degree");
       }
       memset(command_buffer, 0, sizeof(command_buffer));
+=======
+    }
+      case 'S':   
+      {/* move robot */
+          //call function : move robot with |Xvelocity|Yvelocity|
+          robotFoldSeat(arg1, arg2, arg3);
+          break;
+    }
+      default :  
+      {/* help */ 
+          BT.println("Send '1|||!' to turn LED on");
+          BT.println("Send '0|||!' to turn LED off");
+          BT.println("Send 'B|5||!' to blink LED 5 times");
+          BT.println("Send 'W|||!' to fold wings");
+          BT.println("Send 'S|||!' to fold seat");
+          BT.println("Send 'M|2000|1000|0!' to move 2000mm/sec in x, 1000mm/sec, 0 change in degree");
+>>>>>>> 39e8b156bf2d14895cd440016d7692bd88ece4eb
+    }
+    memset(command_buffer, 0, sizeof(command_buffer));
     }
 }
 
