@@ -134,7 +134,8 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
     private void robotGoUp() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("M|2000|2000|90!".toString().getBytes());
+//                btSocket.getOutputStream().write("M|2000|2000|90!".getBytes());
+                btSocket.getOutputStream().write("M".getBytes());
                 toastMsg("Command 'up' sent");
             } catch (IOException e) {
                 toastMsg("Error");

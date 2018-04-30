@@ -9,37 +9,50 @@ void setup()
     // set digital pin to control as an output
     pinMode(LED_BUILTIN, OUTPUT);
     BT.begin(9600);
+    Serial.begin(9600);
     
     // Test message to device
-    BT.println("Hello from Arduino");
+//    BT.println("Hello from Arduino");
 }
 
 void loop() 
 {
     /* Declare global variables */
-    byte  input; // stores incoming character from other device
+    char  input; // stores incoming character from other device
     char  command_buffer[20];
+    String  command = "";  //just for debugging
+    
     int   i = 0;
     int   arg1 = 0;
     int   arg2 = 0;
     int   arg3 = 0;
 
-    while (1){
+    while (1) {
         if ( BT.available() ) {
-            input = (char)BT.read();
-            Serial.print("got input: ");
-            Serial.write(input);
-            Serial.print("\n");
+            input = BT.read();
+            Serial.print("input: ");
+            Serial.print(input);
+            Serial.println();
             command_buffer[i] = input;
-            i++;
-            if (input == '!'){       /* setting pointer back to argument */
-                i = 2;
-                Serial.println("Input=!");
-                break;
-            }
+            command  += input;    //just for debugging
+            
+            /* just for debugging*/
+            break;
+                    
+//            i++;
+//            if (input == '!') {       /* setting pointer back to argument */
+//                i = 2;
+//                Serial.println("Input=!");
+//                break;
+//            }
+
+            delay(1);
+        } else {
+            BT.println("not available");
         }
-        BT.println("not available");
-    }
+    }    
+
+    Serial.println(command);  //just for debugging
 
     //Converts subsequent characters in the array into integer as function argument
     while (command_buffer[i] != '|') {
@@ -80,8 +93,7 @@ void loop()
      *  B ---> Blink LED
     ----------------------------------------------*/
 
-<<<<<<< HEAD
-    switch (command_buf[0]) {
+    switch (command_buffer[0]) {
       case '1':                     /* turn on led */
       {
           BT.println("LED on");
@@ -108,41 +120,10 @@ void loop()
       }
       case 'W':                     /* move robot */
       {
-=======
-    switch (command_buffer[0]) {
-      case '1':     
-      {/* turn on led */
-          BT.println("LED on");
-          digitalWrite(LED_BUILTIN, HIGH);
-          break;
-    } 
-      case '0': 
-      {/* turn off led */
-          BT.println("LED off");
-          digitalWrite(LED_BUILTIN, LOW);
-          break;
-    }
-      case 'B': 
-      {/* blink led */
-          BT.println("Blink LED");
-          blinkLED(arg1);
-          break;
-    }
-      case 'M': 
-      {/* move robot */
-          //call function : move robot with |Xvelocity|Yvelocity|s
-          Serial.println("MOVE");
-          robotMove(arg1, arg2, arg3);
-          break;
-    }
-      case 'W':    
-    {/* move robot */
->>>>>>> 39e8b156bf2d14895cd440016d7692bd88ece4eb
           //call function : move robot with |Xvelocity|Yvelocity|
           Serial.println("MOVE");
           robotFoldWings(arg1, arg2, arg3);
           break;
-<<<<<<< HEAD
       }
       case 'S':                     /* move robot */
       {
@@ -152,33 +133,14 @@ void loop()
       }  
       default :                     /* help */ 
       {    
-          BT.println("Send '1||||' to turn LED on");
-          BT.println("Send '0||||' to turn LED off");
-          BT.println("Send 'B|5|||' to blink LED 5 times");
-          BT.println("Send 'W||||' to fold wings");
-          BT.println("Send 'S||||' to fold seat");
-          BT.println("Send 'M|2000|1000|0|' to move 2000mm/sec in x, 1000mm/sec, 0 change in degree");
-      }
-      memset(command_buffer, 0, sizeof(command_buffer));
-=======
-    }
-      case 'S':   
-      {/* move robot */
-          //call function : move robot with |Xvelocity|Yvelocity|
-          robotFoldSeat(arg1, arg2, arg3);
-          break;
-    }
-      default :  
-      {/* help */ 
           BT.println("Send '1|||!' to turn LED on");
           BT.println("Send '0|||!' to turn LED off");
           BT.println("Send 'B|5||!' to blink LED 5 times");
           BT.println("Send 'W|||!' to fold wings");
           BT.println("Send 'S|||!' to fold seat");
           BT.println("Send 'M|2000|1000|0!' to move 2000mm/sec in x, 1000mm/sec, 0 change in degree");
->>>>>>> 39e8b156bf2d14895cd440016d7692bd88ece4eb
-    }
-    memset(command_buffer, 0, sizeof(command_buffer));
+      }
+      memset(command_buffer, 0, sizeof(command_buffer));
     }
 }
 
@@ -196,10 +158,10 @@ void  robotMove ( int arg1,
                   int arg2,
                   int arg3)
 {
-    println("arg1: ", arg1);
-    println("arg2 :", arg2);
-    println("arg3 :", arg3);
-    println();
+    Serial.println("arg1: " + arg1);
+    Serial.println("arg2 :" + arg2);
+    Serial.println("arg3 :" + arg3);
+    Serial.println();
 }
 
 void  robotFoldSeat ( int arg1,
