@@ -99,9 +99,9 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
             case R.id.btn_peak:
                 configPeak();
                 break;
-//            case R.id.btn1:
-//                myFunc();
-//                break;
+            case R.id.btn1:
+
+                break;
             default:
                 break;
         }

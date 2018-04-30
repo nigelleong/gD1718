@@ -78,42 +78,51 @@ void loop()
 
     switch (command_buf[0]) {
       case '1':                     /* turn on led */
+      {
           BT.println("LED on");
           digitalWrite(LED_BUILTIN, HIGH);
           break;
-          
+      }   
       case '0':                     /* turn off led */
+      {
           BT.println("LED off");
           digitalWrite(LED_BUILTIN, LOW);
           break;
-
+      }
       case 'B':                     /* blink led */
+      {
           BT.println("Blink LED");
           blinkLED(arg1);
           break;
-
+      }
       case 'M':                     /* move robot */
+      {
           //call function : move robot with |Xvelocity|Yvelocity|
           robotMove(arg1, arg2, arg3);
           break;
-
+      }
       case 'W':                     /* move robot */
+      {
           //call function : move robot with |Xvelocity|Yvelocity|
           robotFoldWings(arg1, arg2, arg3);
           break;
-
+      }
       case 'S':                     /* move robot */
+      {
           //call function : move robot with |Xvelocity|Yvelocity|
           robotFoldSeat(arg1, arg2, arg3);
           break;
-          
+      }  
       default :                     /* help */ 
+      {    
           BT.println("Send '1||||' to turn LED on");
           BT.println("Send '0||||' to turn LED off");
           BT.println("Send 'B|5|||' to blink LED 5 times");
           BT.println("Send 'W||||' to fold wings");
           BT.println("Send 'S||||' to fold seat");
           BT.println("Send 'M|2000|1000|0|' to move 2000mm/sec in x, 1000mm/sec, 0 change in degree");
+      }
+      memset(command_buffer, 0, sizeof(command_buffer));
     }
 }
 
