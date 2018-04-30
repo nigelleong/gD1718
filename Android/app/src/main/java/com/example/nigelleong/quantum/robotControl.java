@@ -99,9 +99,9 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
             case R.id.btn_peak:
                 configPeak();
                 break;
-            case R.id.btn1:
-                myFunc();
-                break;
+//            case R.id.btn1:
+//                myFunc();
+//                break;
             default:
                 break;
         }
@@ -110,7 +110,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
     private void robotFoldSeat() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("S||||".toString().getBytes());
+                btSocket.getOutputStream().write("S|||!".toString().getBytes());
                 toastMsg("Command 'fold seat' sent");
             } catch (IOException e) {
                 toastMsg("Error");
@@ -122,7 +122,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
     private void robotFoldWings() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("W||||".toString().getBytes());
+                btSocket.getOutputStream().write("W|||!".toString().getBytes());
                 toastMsg("Command 'fold wings' sent");
             } catch (IOException e) {
                 toastMsg("Error");
@@ -134,7 +134,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
     private void robotGoUp() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("M|2000|2000|90|".toString().getBytes());
+                btSocket.getOutputStream().write("M|2000|2000|90!".toString().getBytes());
                 toastMsg("Command 'up' sent");
             } catch (IOException e) {
                 toastMsg("Error");
@@ -146,7 +146,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
     private void robotGoDown() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("M|2000|2000|270|".toString().getBytes());
+                btSocket.getOutputStream().write("M|2000|2000|270!".toString().getBytes());
                 toastMsg("Command 'down' sent");
             } catch (IOException e) {
                 toastMsg("Error");
@@ -158,7 +158,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
     private void robotGoLeft() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("M|2000|2000|180|".toString().getBytes());
+                btSocket.getOutputStream().write("M|2000|2000|180!".toString().getBytes());
                 toastMsg("Command 'left' sent");
             } catch (IOException e) {
                 toastMsg("Error");
@@ -170,7 +170,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
     private void robotGoRight() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("M|2000|2000|0|".toString().getBytes());
+                btSocket.getOutputStream().write("M|2000|2000|0!".toString().getBytes());
                 toastMsg("Command 'right' sent");
             } catch (IOException e) {
                 toastMsg("Error");
@@ -182,7 +182,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
     private void arduinoBlinkLED() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("B|2|||".toString().getBytes());
+                btSocket.getOutputStream().write("B|2||!".toString().getBytes());
                 toastMsg("Command 'blink led 2 times' sent");
             } catch (IOException e) {
                 toastMsg("Error");
@@ -194,13 +194,13 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
     private void configPeak() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("W|200|200|90|".toString().getBytes());
+                btSocket.getOutputStream().write("W|200|200|90!".toString().getBytes());
                 bytes = btSocket.getInputStream().read(buffer);
-                btSocket.getOutputStream().write("W|200|200|180|".toString().getBytes());
+                btSocket.getOutputStream().write("W|200|200|180!".toString().getBytes());
                 bytes = btSocket.getInputStream().read(buffer);
-                btSocket.getOutputStream().write("W|200|200|270|".toString().getBytes());
+                btSocket.getOutputStream().write("W|200|200|270!".toString().getBytes());
                 bytes = btSocket.getInputStream().read(buffer);
-                btSocket.getOutputStream().write("W|200|200|0|".toString().getBytes());
+                btSocket.getOutputStream().write("W|200|200|0!".toString().getBytes());
                 toastMsg("Config Peak completed");
             } catch (IOException e) {
                 toastMsg("Error");

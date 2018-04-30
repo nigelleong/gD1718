@@ -18,7 +18,7 @@ void loop()
 {
     /* Declare global variables */
     char  input; // stores incoming character from other device
-    char  command_buffer[10];
+    char  command_buffer[20];
     int   i = 0;
     int   arg1 = 0;
     int   arg2 = 0;
@@ -29,8 +29,8 @@ void loop()
             input = ( BT.read() );
             command_buffer[i] = input;
             i++;
-            if (input == '|'){       /* setting pointer back to argument */
-                i = 1;
+            if (input == '!'){       /* setting pointer back to argument */
+                i = 2;
                 break;
             }
         }
@@ -52,7 +52,7 @@ void loop()
     }
 
     i++;
-    while (command_buffer[i] != '|') {
+    while (command_buffer[i] != '!') {
         arg3 *= 10;
         arg3 = arg3 + (command_buffer[i] - 48);
         i++;
@@ -131,7 +131,10 @@ void  robotMove ( int arg1,
                   int arg2,
                   int arg3)
 {
-    
+    println("arg1: ", arg1);
+    println("arg2 :", arg2);
+    println("arg3 :", arg3);
+    println();
 }
 
 void  robotFoldSeat ( int arg1,
