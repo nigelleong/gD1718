@@ -147,10 +147,6 @@ unsigned long time;
 unsigned long time_prev = 0;
 int time_diff;
 
-// For Output
-int Serial_diff_time;
-unsigned long Serial_time = 0;
-
 // Speeds
 double v[3]; // desired speed in local frame
 double w[4]; // desired rotational wheel speed WITH SIGN
@@ -183,10 +179,10 @@ int state;
 /* switch(state){
  *  case(0): standby -> no mode selected, no movement, INITIAL Pose can be set
  *  case(1): driving -> Robot expects commands to move with velocity vector for a certain time --> int drive_time
- *  case(3): folding -> Robot expects commands to fold
- *  case(4): not implemented: analog remote controll
- *  case(5): not implemented: predefined configurations
- *  case(6): not implemented: PID position control
+ *  case(2): folding -> Robot expects commands to fold
+ *  case(3): not implemented: analog remote controll
+ *  case(4): not implemented: predefined configurations
+ *  case(5): not implemented: PID position control
  */
  int drive_time = 3000; // drive for 3000 milliseconds
 
@@ -208,7 +204,7 @@ int state;
  
 void setup() {
   // Set states, layout and localization method
-  state = 0;
+  change_state(0);
   layout = 0;
   loc_method = 0;
   // Will be set to true when entering state 0 (STANDBY)
@@ -302,28 +298,19 @@ void loop() {
     }
     return;
   }
+  //Command Variables
+  char  command_buffer[20]; // stores entire command
+  char command = 'd'; //'d' = default
+  int arg1 = 0;
+  int arg2 = 0;
+  int arg3 = 0;
 
   switch(state){
     // STANDBY /////////////////////////////////////////////////
     case 0:{
-      // Stop all motors
-      if(!DC_STOP){
-        DC_STOP = allWheelsSTOP();
-      }
-      if(!Stepper_STOP){
-        Stepper_STOP = allSteppersSTOP();
-      }
       // Waiting for commands
-      char  command_buffer[20]; // stores entire command
-      char command = 'd'; //'d' = default
-      int arg1 = 0;
-      int arg2 = 0;
-      int arg3 = 0;
       read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);
-      //Check/print command:
-      if(print_to_COM){
-        print_Command(command_buffer, &command, &arg1, &arg2, &arg3);       
-      }
+      //First character of command
       switch(command){
         case 'S': //'S'= switch -> switch to state defined in arg1 (see above)
         {
@@ -334,15 +321,10 @@ void loop() {
         case 'P': // Set global pose according to arguments
         {
           Robot_Pose.setglobalPose(arg1,arg2,arg3);
-          if(print_to_COM){
-            Serial.println("New pose: ");
-            Serial.print(Robot_Pose.globalPose[0],"\t");
-            Serial.print(Robot_Pose.globalPose[1],"\t");
-            Serial.println(Robot_Pose.globalPose[2]);
-          }
+          print_globalPose();
           break;
         }
-        default: {state = 0;}// Stay in STANDBY 
+        default: {state = 0; break;}// Stay in STANDBY 
       }
       break;
     }
@@ -350,16 +332,8 @@ void loop() {
     // Driving /////////////////////////////////////////////////
     case 1:{
       // Waiting for commands
-      char  command_buffer[20]; // stores entire command
-      char command = 'd'; //'d' = default
-      int arg1 = 0;
-      int arg2 = 0;
-      int arg3 = 0;
       read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);
-      //Check/print command:
-      if(print_to_COM){
-        print_Command(command_buffer, &command, &arg1, &arg2, &arg3);       
-      }
+      //First character of command
       switch(command){
         case 'S': //'S'= switch -> switch to state defined in arg1 (see above)
         {
@@ -373,6 +347,12 @@ void loop() {
         }
         case 'M': //Moving with velocities defined by arg1-3 for a certain time
         {
+          if(layout!=0){
+            if(print_to_COM){
+              Serial.println("Bevore moving change into privacy/moving configuration!!");
+              break;
+            }
+          }
           // Calculations of wheel speeds
           v[0] = arg1;
           v[1] = arg2;
@@ -385,11 +365,25 @@ void loop() {
           // Desired wheel speeds WITHOUT SIGN (needed for PID controller
           SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
           
-          //
+          // Print header for localization results
+          if(print_to_COM){
+            switch(loc_method){
+              case 0: {Serial.println("Pose odometry:   x   y   \theta");}
+              case 1: {Serial.println("Pose odometry:   x   y   \theta    Angle IMU:  \theta    Pose Kalman:    x   y   \theta");}
+              case 2: {Serial.println("Pose odometry:   x   y   \theta    Angle IMU:  \theta    Pose Kalman:    x   y   \theta    Pose Kalman RFID    x   y   \theta");}    
+            }
+          }
+
+          // Reset Encoders and Reset FiFo buffer of IMU
+          getEnconderSpeeds(50);
+          mpu.resetFIFO();
+          // Initialize times
           time = millis();
+          time_prev = millis();
+          
           //driving for drive_time milliseconds
           while(millis()-time<drive_time){
-            time_diff = time - time_prev;
+            time_diff = millis() - time_prev;
             // Localization
             if (time_diff > encoder_frequency) {
               //Calculate wheel speeds 
@@ -421,16 +415,39 @@ void loop() {
                   break;
                 }
               }
-              if(loc_method==2){
-                //discrete calman filter
+              
+              // Reset time for Encoder
+              time_prev = millis();
+              // Print localization results
+              if(print_to_COM){
+                Print_Serial_Localization();
               }
-              time_prev = time; //Reset time to obtain the difference later
+            }
+            // Include RFID readings
+            if(loc_method==2){
+              // Tag reading
+              buffer_size = sizeof(buffer);
+              // Read NFC tag if available
+              if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()){
+                status = (MFRC522::StatusCode) mfrc522.MIFARE_Read(pageAddr, buffer, &buffer_size);
+                if (status != MFRC522::STATUS_OK) {
+                  if(print_to_COM){
+                    Serial.print(F("MIFARE_Read() failed: "));
+                    Serial.println(mfrc522.GetStatusCodeName(status));
+                  }
+                }    
+                float tag_x;
+                float tag_y;
+                KalmanNFC.newTagdetected(tag_x, tag_y);
+                KalmanNFC.orientationRobot(Robot_Pose);
+                KalmanNFC.calcNewState(Robot_Pose);
+                Robot_Pose.setglobalPose(KalmanNFC.new_State[0], KalmanNFC.new_State[1], KalmanNFC.new_State[2]);
+              }
+              mfrc522.PICC_HaltA();
+              
             }          
             if(!DC_STOP){// Compute PID results for DC motors and run DC motors
               run_DC();
-            }
-            if(print_to_COM){
-              Print_Serial();
             }
           }
           DC_STOP = allWheelsSTOP();
@@ -439,51 +456,56 @@ void loop() {
         case 'P': // Set global pose according to arguments
         {
           Robot_Pose.setglobalPose(arg1,arg2,arg3);
-          if(print_to_COM){
-            Serial.println("New pose: ");
-            Serial.print(Robot_Pose.globalPose[0],"\t");
-            Serial.print(Robot_Pose.globalPose[1],"\t");
-            Serial.println(Robot_Pose.globalPose[2]);
-          }
+          print_globalPose();
           break;
         }
-        default: {} 
+        default: {break;} 
       }
       break;      
-    } 
-    ////////////////////////////////////////////////////////////
-    default: {Serial.println("ERROR: No state selected");}
-  }
-  // Tag reading
-  buffer_size = sizeof(buffer);
-  // Read NFC tag if available
-  if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()){
-    status = (MFRC522::StatusCode) mfrc522.MIFARE_Read(pageAddr, buffer, &buffer_size);
-    if (status != MFRC522::STATUS_OK) {
-        Serial.print(F("MIFARE_Read() failed: "));
-        Serial.println(mfrc522.GetStatusCodeName(status));
-    }    
-/*    SET tag_det at the beginning!!!! (to starting position of robot)
-    newTagdetected();
-    orientationRobot();
-    calcNewState();*/
-    Serial.print(F("Read data: "));
-    for (byte i = 0; i < 16; i++) {
-      Serial.write(buffer[i]);
     }
-    Serial.println();
+    ////////////////////////////////////////////////////////////
+    case 2:  // FOLDING
+    {
+      // Waiting for commands
+      read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);
+      //First character of command
+      switch(command){
+        case 'S': //'S'= switch -> switch to state defined in arg1 (see above)
+        {
+          change_state(arg1);
+          break;
+        }
+        case 'W': //'W' is fold wings first argument: both(2) or left(1) or right(0) wing, second argument open(1) or close(0)
+        {
+          do_Wings(arg1, arg2);
+          break;
+        }
+        case 'C': //'C' for chair(seat): first argument Seat (all left middle right) -> (3 2 1 0) & second argument direction (up down): (1 0)
+        {
+          do_Seats(arg1, arg2);
+          break;
+        }
+        
+      }
+      break;
+    }
+    ////////////////////////////////////////////////////////////
+    // Default case
+    default: 
+    {
+      if(print_to_COM){
+        Serial.println("ERROR: No state selected");
+      }
+      break;
+    }
   }
-  mfrc522.PICC_HaltA();
 
-  // Calculate desired wheels speeds WITH SIGN
-  SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
-  // Desired wheel speeds WITHOUT SIGN (needed for PID controller
-  SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
-  
-  
 }
 
-////////////////////////////////////////////////////////////////////////////////
+
+/*////////////////////////////////////////////////////////////////////////////////
+////////////////FUNCTIONS/////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////*/
 // Read Bluetooth Commands
 void read_BT_command(char* command_buffer, char *command, int *arg1, int *arg2, int *arg3){
   int input;
@@ -524,10 +546,8 @@ void read_BT_command(char* command_buffer, char *command, int *arg1, int *arg2, 
       *arg3 = *arg3 + (command_buffer[i] - 48);
       i++;
   }
-} 
-//////////////////////////////////////////////////////////////////////////////////////
-// Print Bluetooth Command
-void print_Command(char * command_buffer, char * command, int * arg1, int * arg2, int * arg3){
+    //Check/print command:
+  if(print_to_COM){
     Serial.print("Command Buffer: ");
     Serial.println(command_buffer);
     Serial.print("Command: ");
@@ -537,8 +557,20 @@ void print_Command(char * command_buffer, char * command, int * arg1, int * arg2
     Serial.print("arg2: ");
     Serial.println(*arg2);
     Serial.print("arg3: ");
-    Serial.println(*arg3);
+    Serial.println(*arg3);   
+  }
+} 
+
+///////////////////////////////////////////////////
+void print_globalPose(){
+  if(print_to_COM){
+    Serial.println("The (new) pose is: ");
+    Serial.print(Robot_Pose.globalPose[0],"\t");
+    Serial.print(Robot_Pose.globalPose[1],"\t");
+    Serial.println(Robot_Pose.globalPose[2]);
+  }
 }
+
 ///////////////////////////////////////////////////
 void change_loc_method(int arg1){
   loc_method = arg1;
@@ -547,6 +579,10 @@ void change_loc_method(int arg1){
     case 1:
     case 2: 
     {
+      // Set detected tag to current position
+      KalmanNFC.tag_det[0] = Robot_Pose.globalPose[0];
+      KalmanNFC.tag_det[1] = Robot_Pose.globalPose[1]; 
+      //Get current yaw angle
       mpu.resetFIFO();
       fifoCount = mpu.getFIFOCount();
       while(fifoCount < packetSize){
@@ -564,7 +600,11 @@ void change_loc_method(int arg1){
   }
   if(print_to_COM){
     switch(arg1){     
-      case 0: {Serial.println("Localization method changed to: ODOMETRY"); break;}      
+      case 0: 
+      {
+        Serial.println("Localization method changed to: ODOMETRY"); 
+        break;
+      }      
       case 1: 
       {
         Serial.println("Localization method changed to: ODOMETRY + IMU"); 
@@ -583,33 +623,85 @@ void change_loc_method(int arg1){
   }
 }
 void change_state(int arg1){
+  // Stop all motors
+  if(!DC_STOP){
+    DC_STOP = allWheelsSTOP();
+  }
+  if(!Stepper_STOP){
+    Stepper_STOP = allSteppersSTOP();
+  }
+  delay(500);
   state = arg1;
-  switch(arg1){     
+  switch(arg1){    
+    case 0:
+    {
+      break; 
+    }
     case 1: 
     {
-      loc_method = 0;
-      // Stop all Stepper motors
-      if(!Stepper_STOP){
-        Stepper_STOP = allSteppersSTOP();
-      }
+      change_loc_method(0);
+      break;
+    }
+    case 2:
+    {
+      break;
+    }
+    case 3: 
+    {
+      change_loc_method(0);
+      break;
     }      
-    case 3: {loc_method = 0;}      
-    case 4: {loc_method = 2;}  
-    case 5: {loc_method = 2;}          
+    case 4: 
+    {
+      change_loc_method(2);
+      break;
+    }  
+    case 5: 
+    {
+      change_loc_method(2);
+      break;
+    }          
   }
   if(print_to_COM){
     switch(arg1){
-      case 0: {Serial.println("Change state to STANDBY");}      
-      case 1: {Serial.println("Change state to DRIVING");
-               Serial.println("Default localization method: odometry");}    
-      case 2: {Serial.println("Change state to FOLDING");}    
-      case 3: {Serial.println("Change state to REMOTE CONTROL");
-               Serial.println("Default localization method: odometry");}      
-      case 4: {Serial.println("Change state to LAYOUT");
-               Serial.println("Default localization method: odometry + IMU + RFID");}  
-      case 5: {Serial.println("Change state to PID POSITION CONTROL");
-               Serial.println("Default localization method: odometry + IMU + RFID");} 
-      default: {Serial.println("Not a valid Mode!!");}         
+      case 0: 
+      {
+        Serial.println("Change state to STANDBY");
+        break;
+      }      
+      case 1: 
+      {
+        Serial.println("Change state to DRIVING");
+        Serial.print("Each movement is: ");
+        Serial.print(drive_time);
+        Serial.println(" milliseconds long");
+        Serial.println("Default localization method: odometry");
+        break;
+      }    
+      case 2: 
+      {
+        Serial.println("Change state to FOLDING");
+        break;
+      }    
+      case 3: 
+      {
+        Serial.println("Change state to REMOTE CONTROL");
+        Serial.println("Default localization method: odometry");
+        break;
+      }      
+      case 4: 
+      {
+        Serial.println("Change state to LAYOUT");
+        Serial.println("Default localization method: odometry + IMU + RFID");
+        break;
+      }  
+      case 5: 
+      {
+        Serial.println("Change state to PID POSITION CONTROL");
+        Serial.println("Default localization method: odometry + IMU + RFID");
+         break;
+      } 
+      default: {Serial.println("Not a valid Mode!!");break;}         
     }
   }
 }
@@ -678,6 +770,21 @@ bool allWheelsSTOP(){
   analogWrite(DC_3.pin_speed, 0);
   digitalWrite(DC_4.pin_dir, 0);
   analogWrite(DC_4.pin_speed, 0);
+  delay(500);
+  getEnconderSpeeds(50);
+  delay(50);
+  getEnconderSpeeds(50);
+  v[0]=0;v[1]=0;v[2]=0;
+  SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
+  SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
+  PID_Out_DC[0] = 0;
+  PID_Out_DC[1] = 0;
+  PID_Out_DC[2] = 0;
+  PID_Out_DC[3] = 0;
+  PID_DC1.Initialize();
+  PID_DC2.Initialize();
+  PID_DC3.Initialize();
+  PID_DC4.Initialize();
   return true;
   }
 
@@ -752,72 +859,93 @@ void Init_IMU_RFID(){
   mfrc522.PCD_Init(); //Initialize MFRC522 card
 }
 
-void Print_Serial(){
-  Serial.println("\t w \t\t  w_should \t w_is \t dir_is \t PID_Out_DC \t DC_Input");
-      
-      Serial.print("Wheel 1 \t");
-      Serial.print(w[0]);
+void Print_Serial_Localization(){
+  /*switch(loc_method){
+    case 0: {Serial.println("Pose odometry:   x   y   \theta");}
+    case 1: {Serial.println("Pose odometry:   x   y   \theta    Angle IMU:  \theta    Pose Kalman:    x   y   \theta");}
+    case 2: {Serial.println("Pose odometry:   x   y   \theta    Angle IMU:  \theta    Pose Kalman:    x   y   \theta    Pose Kalman RFID    x   y   \theta");}    
+  }*/
+  switch(loc_method){
+    case 0:
+    {
+      Serial.print("\t\t\t\t\t");
+      Serial.print(Robot_Pose.odometryPose[0]);
       Serial.print("\t\t");
-      Serial.print(w_should[0]);
-      Serial.print("\t");
-      Serial.print(w_is[0]);
-      Serial.print("\t");
-      Serial.print(DC_1.dir);
+      Serial.print(Robot_Pose.odometryPose[1]);
       Serial.print("\t\t");
-      Serial.print(PID_Out_DC[0]);
-      Serial.print("\t\t");
-      Serial.println(DC_1.mapped_speed);
-      
-      Serial.print("Wheel 2 \t");
-      Serial.print(w[1]);
-      Serial.print("\t\t");
-      Serial.print(w_should[1]);
-      Serial.print("\t");
-      Serial.print(w_is[1]);
-      Serial.print("\t");
-      Serial.print(DC_2.dir);
-      Serial.print("\t\t");
-      Serial.print(PID_Out_DC[1]);
-      Serial.print("\t\t");
-      Serial.println(DC_2.mapped_speed);
-      
-      Serial.print("Wheel 3 \t");
-      Serial.print(w[2]);
-      Serial.print("\t\t");
-      Serial.print(w_should[2]);
-      Serial.print("\t");
-      Serial.print(w_is[2]);
-      Serial.print("\t");
-      Serial.print(DC_3.dir);
-      Serial.print("\t\t");
-      Serial.print(PID_Out_DC[2]);
-      Serial.print("\t\t");
-      Serial.println(DC_3.mapped_speed);
-    
-      Serial.print("Wheel 4 \t");
-      Serial.print(w[3]);
-      Serial.print("\t\t");
-      Serial.print(w_should[3]);
-      Serial.print("\t");
-      Serial.print(w_is[3]);
-      Serial.print("\t");
-      Serial.print(DC_4.dir);
-      Serial.print("\t\t");
-      Serial.print(PID_Out_DC[3]);
-      Serial.print("\t\t");
-      Serial.println(DC_4.mapped_speed);
-      
-
-      Serial.print("\n");
-      Serial.print("\n");
-
-      Serial.println(Robot_Pose.odometryPose[0]);
-      Serial.println(Robot_Pose.odometryPose[1]);
-      Serial.println(Robot_Pose.odometryPose[2]);
-      Serial.print("\n");
-      Serial.print("\n");
+      Serial.print(Robot_Pose.odometryPose[2]);
+      Serial.println("\t\t");
+      break;      
+    }
+    case 1:
+    case 2:
+    {
+      break;
+    }
+  }
 }
 //////////////////////////////////////////////////////////////////////////////////////
+void do_Wings(int arg1, int arg2){ 
+  if(arg1==2){
+    if(arg2==1){
+      openWings();
+    }
+    else if(arg2==0){
+      closeWings();
+    }      
+  }
+  else if(arg1==1){
+    if(arg2==1){
+      openWing_L();
+    }
+    else if(arg2==0){
+      closeWing_L();
+    }
+  }
+  else if(arg1==0){
+    if(arg2==1){
+      openWing_R();
+    }
+    else if(arg2==0){
+      closeWing_R();
+    }
+  }
+}
+
+void do_Seats(int arg1, int arg2){
+  if(arg1==3){
+    if(arg2==1){
+      foldSeats_up();
+    }
+    else if(arg2==0){
+      foldSeats_down();
+    }      
+  }
+  else if(arg1==2){
+    if(arg2==1){
+      foldSeats_L_up();
+    }
+    else if(arg2==0){
+      foldSeats_L_down();
+    }
+  }
+  else if(arg1==1){
+    if(arg2==1){
+      foldSeats_M_up();
+    }
+    else if(arg2==0){
+      foldSeats_M_down();
+    }
+  }
+  else if(arg1==0){
+    if(arg2==1){
+      foldSeats_R_up();
+    }
+    else if(arg2==0){
+      foldSeats_R_down();
+    }
+  }
+}
 
 // Folding Functions for Wings
 void openWings(){
@@ -909,12 +1037,30 @@ void foldSeats_RL_up(){
     delay(stepDelay_Seats);
   } 
 }
+void foldSeats_L_up(){
+  digitalWrite(Seat_L_dir, HIGH);
+  for(int i=0; i<steps_Seats ; i++){
+    digitalWrite(Seat_L_step, HIGH);
+    delayMicroseconds(stepTime_Seats);
+    digitalWrite(Seat_L_step, LOW);
+    delay(stepDelay_Seats);
+  } 
+}
 void foldSeats_M_up(){
   digitalWrite(Seat_M_dir, HIGH);
   for(int i=0; i<steps_Seats ; i++){
     digitalWrite(Seat_M_step, HIGH);
     delayMicroseconds(stepTime_Seats);
     digitalWrite(Seat_M_step, LOW);
+    delay(stepDelay_Seats);
+  } 
+}
+void foldSeats_R_up(){
+  digitalWrite(Seat_R_dir, HIGH);
+  for(int i=0; i<steps_Seats ; i++){
+    digitalWrite(Seat_R_step, HIGH);
+    delayMicroseconds(stepTime_Seats);
+    digitalWrite(Seat_R_step, LOW);
     delay(stepDelay_Seats);
   } 
 }
@@ -945,6 +1091,15 @@ void foldSeats_RL_down(){
     delay(stepDelay_Seats);
   } 
 }
+void foldSeats_L_down(){
+  digitalWrite(Seat_L_dir, LOW);
+  for(int i=0; i<steps_Seats ; i++){
+    digitalWrite(Seat_L_step, HIGH);
+    delayMicroseconds(stepTime_Seats);
+    digitalWrite(Seat_L_step, LOW);
+    delay(stepDelay_Seats);
+  } 
+}
 void foldSeats_M_down(){
   digitalWrite(Seat_M_dir, LOW);
   for(int i=0; i<steps_Seats ; i++){
@@ -954,76 +1109,13 @@ void foldSeats_M_down(){
     delay(stepDelay_Seats);
   } 
 }
-
-
-//BACKUP
-/*// Determine position derived from odometry and IMU
-          fifoCount = mpu.getFIFOCount(); // Get size of FIFO buffer of IMU
-          time = millis();
-          time_diff = time - time_prev;
-          if (time_diff > encoder_frequency && fifoCount > packetSize) { //time_diff has to have a certain size and IMU FIFO must be big enough
-            // Get speed in rad/sec from encoders!! (WITHOUT SIGN)
-            w_is[0] = Encoder_1.calcSpeed(time_diff);
-            Encoder_1.count = 0;
-            w_is[1] = Encoder_2.calcSpeed(time_diff);
-            Encoder_2.count = 0;
-            w_is[2] = Encoder_3.calcSpeed(time_diff);
-            Encoder_3.count = 0;
-            w_is[3] = Encoder_4.calcSpeed(time_diff);
-            Encoder_4.count = 0;
-            //Add Sign assuming all wheels rotate with the correct direction
-            include_sign(w, w_is, w_is_sign);
-        
-            // read a packet from FIFO of IMU
-            mpu.getFIFOBytes(fifoBuffer, packetSize);
-            mpu.dmpGetQuaternion(&q, fifoBuffer);
-            mpu.dmpGetGravity(&gravity, &q);
-            mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-            //Serial.print("Yaw:\t");
-            //Serial.println(ypr[0]*180/M_PI);
-            mpu.resetFIFO();
-              
-            // Calculate position calculated from odometry
-            Robot_Pose.newPoseOdometry((float*)w_is_sign, SRTMecanum, time_diff);
-            Robot_Pose.newAngleIMU(yaw_prev, ypr[0]); //yaw_prev and ypr in degrees (euler) but result in radian!!
-            // Claculate new Pose by fusing yaw angle from IMU with odometry data
-            KalmanOdoIMU.calcNewState((float*)w_is_sign, SRTMecanum, Robot_Pose, time_diff);
-            Robot_Pose.setglobalPose(KalmanOdoIMU.new_State[0], KalmanOdoIMU.new_State[1], KalmanOdoIMU.new_State[2]);
-            
-            time_prev = time; //Reset time to obtain the difference later
-            yaw_prev = ypr[0]; //Reste yaw angle to obtain difference later
-          }
-        
-          if(!DC_STOP){// Compute PID results for DC motors if robot should move
-            PID_DC1.Compute();
-            PID_DC2.Compute();
-            PID_DC3.Compute();
-            PID_DC4.Compute();
-            // Map wheel speeds to value between 0 and 255 to run DC-motors
-            DC_1.map_wheelspeed(w[0],PID_Out_DC[0]);
-            DC_2.map_wheelspeed(w[1],PID_Out_DC[1]);
-            DC_3.map_wheelspeed(w[2],PID_Out_DC[2]);
-            DC_4.map_wheelspeed(w[3],PID_Out_DC[3]);
-          
-            // Run DC-motors
-            digitalWrite(DC_1.pin_dir, DC_1.dir);
-            analogWrite(DC_1.pin_speed, DC_1.mapped_speed);
-            digitalWrite(DC_2.pin_dir, DC_2.dir);
-            analogWrite(DC_2.pin_speed, DC_2.mapped_speed);
-            digitalWrite(DC_3.pin_dir, DC_3.dir);
-            analogWrite(DC_3.pin_speed, DC_3.mapped_speed);
-            digitalWrite(DC_4.pin_dir, DC_4.dir);
-            analogWrite(DC_4.pin_speed, DC_4.mapped_speed);
-          }
-          else{
-            for(int i=0;i<4;i++){
-              PID_Out_DC[i] = 0;
-            }
-          } 
-        
-          Serial_diff_time = time - Serial_time;
-          if(Serial_diff_time>1000){
-            Print_Serial();
-            Serial_time = time;
-          }*/
+void foldSeats_R_down(){
+  digitalWrite(Seat_R_dir, LOW);
+  for(int i=0; i<steps_Seats ; i++){
+    digitalWrite(Seat_R_step, HIGH);
+    delayMicroseconds(stepTime_Seats);
+    digitalWrite(Seat_R_step, LOW);
+    delay(stepDelay_Seats);
+  } 
+}
 

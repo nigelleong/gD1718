@@ -13,7 +13,6 @@ private:
 	const float pi = 3.14159265359;
 	float yaw_est;
 	float tag_prev[2];
-	float tag_det[2]; // corresponds to z in KalmanFus.h
 	float tag_pred[2]; // corresponds to z_pred in KalmanFus.h
 	float pose_tag_prev[2];
 	bool checkRobotinZone(Pose);
@@ -29,12 +28,14 @@ private:
 	float Q[2][2]; //Cov_quantized measurement
 	void calcKalmanGain();
 	void updateErrorModel();
-	void orientationRobot(Pose, float*, float*);
+	
 	
 public:	
 	discreteKalman();
+	float tag_det[2]; // corresponds to z in KalmanFus.h
 	float new_State[3];
 	void newTagdetected(float, float);
+	void orientationRobot(Pose);
 	void calcNewState(Pose);
 };
 

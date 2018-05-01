@@ -66,7 +66,7 @@ discreteKalman::discreteKalman() {
 	
 }
 
-void discreteKalman::orientationRobot(Pose SRT_Pose, float* tag_prev, float* tag_det){
+void discreteKalman::orientationRobot(Pose SRT_Pose){
 	double tag_dis[2]; //destances between tags (x and y)
 	double pose_dis[2]; // distances between current estimated pose and previous tag
 	// centre_dists between tags and poses at tags
@@ -91,7 +91,7 @@ void discreteKalman::newTagdetected(float x, float y){
 
 void discreteKalman::calcNewState(Pose SRT_Pose){
 	// If the robot is estimated to be inside the tag zone, 
-	// an update is not neccessary
+	// update is not neccessary
 	if(checkRobotinZone(SRT_Pose)){
 		new_State[0] = SRT_Pose.globalPose[0];
 		new_State[1] = SRT_Pose.globalPose[1];
