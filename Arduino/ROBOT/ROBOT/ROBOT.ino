@@ -166,17 +166,15 @@ PID PID_DC3(&w_is[2], &PID_Out_DC[2], &w_should[2], Kp_DC, Ki_DC, Kd_DC, DIRECT)
 PID PID_DC4(&w_is[3], &PID_Out_DC[3], &w_should[3], Kp_DC, Ki_DC, Kd_DC, DIRECT);
 
 // Create PID for position Control
-double Kp_Pose = 1, Ki_Pose = 1, Kd_Pose = 0, Kf_Pose = 0;
+/*double Kp_Pose = 1, Ki_Pose = 1, Kd_Pose = 0, Kf_Pose = 0;
 PID PID_x(
 PID PID_y(
 PID PID_theta(
 // Set Output limits:
 PID_x.SetOutputLimits(-v_max_x, v_max_x);
-PID_x.SetFilter(Kf_Pose);
 PID_y.SetOutputLimits(-v_max_y, v_max_y);
-PID_y.SetFilter(Kf_Pose);
-PID_theta.SetOutputLimits(-w_max, w_max);
-PID_theta.SetFilter(Kf_Pose);
+PID_theta.SetOutputLimits(-w_max, w_max);*/
+
 
 // States of the robot
 int state = 0;
@@ -307,12 +305,12 @@ void setup() {
   PID_DC4.SetMode(AUTOMATIC);
   PID_DC4.SetSampleTime(PID_sample_time);
 
-  PID_x.SetMode(AUTOMATIC);
+/*  PID_x.SetMode(AUTOMATIC);
   PID_x.SetSampleTime(PID_sample_time);
   PID_y.SetMode(AUTOMATIC);
   PID_y.SetSampleTime(PID_sample_time);
   PID_theta.SetMode(AUTOMATIC);
-  PID_theta.SetSampleTime(PID_sample_time);
+  PID_theta.SetSampleTime(PID_sample_time);*/
 }
 
 void loop() {
@@ -347,7 +345,7 @@ void loop() {
     }
     else if (input=='5'){v[0]=0; v[1]=0; v[2]=0; }
   }
-  if(v[0]=0&&v[0]=0&&v[0]=0){
+  if(v[0]==0&&v[0]==0&&v[0]==0){
     STOP = allWheelsSTOP();
   }
   else {STOP = false;}
@@ -361,10 +359,10 @@ void loop() {
         Serial.print(F("MIFARE_Read() failed: "));
         Serial.println(mfrc522.GetStatusCodeName(status));
     }    
-    SET tag_det at the beginning!!!! (to starting position of robot)
+/*    SET tag_det at the beginning!!!! (to starting position of robot)
     newTagdetected();
     orientationRobot();
-    calcNewState();
+    calcNewState();*/
     Serial.print(F("Read data: "));
     for (byte i = 0; i < 16; i++) {
       Serial.write(buffer[i]);
