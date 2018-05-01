@@ -133,7 +133,8 @@ DC_motor DC_2(DC_M2_Dir, DC_M2_Speed, translation);
 DC_motor DC_3(DC_M3_Dir, DC_M3_Speed, translation);
 DC_motor DC_4(DC_M4_Dir, DC_M4_Speed, translation);
 
-bool STOP = true; // If true robot stops
+bool DC_STOP = true; 
+bool Stepper_STOP = true; 
 
 // Create Encoders
 Encoder Encoder_1(counts_per_round);
@@ -175,23 +176,29 @@ PID_x.SetOutputLimits(-v_max_x, v_max_x);
 PID_y.SetOutputLimits(-v_max_y, v_max_y);
 PID_theta.SetOutputLimits(-w_max, w_max);*/
 
+bool print_to_COM = false; //Print data da serial port (computer)
 
 // States of the robot
-int state = 0;
-/* switch(mode){
- *  case(0): standby -> DC motors off, Stepper motors sleep, magnets activated
- *  case(1): driving -> DC motors ready/on, Stepper motors sleep, magnets deactivated
- *  case(3): folding -> DC motors off, Steppers on, magnets activated
+int state;
+/* switch(state){
+ *  case(0): standby -> no mode selected, no movement, INITIAL Pose can be set
+ *  case(1): driving -> Robot expects commands to move with velocity vector for a certain time
+ *  case(3): folding -> Robot expects commands to fold
+ *  case(4): not implemented: analog remote controll
+ *  case(5): not implemented: predefined configurations
+ *  case(6): not implemented: PID position control
  */
 
- int folding_state = 3; 
- /* switch(mode){
-  *  case(1): lean all
-  *  case(2): sit all
-  *  case(3): private/moving
-  */
+// layouts / configurations
+ int layout;
+ /* switch(layout){
+  *  case(0): private/moving
+  *  case(1): peak hour lean
+  *  case(2): peak hour seat
+ */
  
 void setup() {
+  state = 0;
   // Set speed in local frame
   v[0] = 0;
   v[1] = 0;
@@ -202,55 +209,12 @@ void setup() {
   // Set initial yaw angle from IMU
   yaw_prev = Robot_Pose.globalPose[2];
 
-  // MPU Setup:
-  // join I2C bus (I2Cdev library doesn't do this automatically)
-  #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
-      Wire.begin();
-      Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
-  #elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
-      Fastwire::setup(400, true);
-  #endif
-  
-  // initialize device
-  mpu.initialize();
-  devStatus = mpu.dmpInitialize();
+  // Initialize IMU and RFID reader
+  Init_IMU_RFID();
 
-    // supply your own gyro offsets here, scaled for min sensitivity
-  mpu.setXGyroOffset(99);
-  mpu.setYGyroOffset(-31); //-30
-  mpu.setZGyroOffset(40); //41
-  mpu.setZAccelOffset(1483); // 1484
-
-  // make sure it worked (returns 0 if so)
-  if (devStatus == 0) {
-      // turn on the DMP, now that it's ready
-      Serial.println(F("Enabling DMP..."));
-      mpu.setDMPEnabled(true);
-
-      dmpReady = true;
-
-      // get expected DMP packet size for later comparison
-      packetSize = mpu.dmpGetFIFOPacketSize();
-      
-  } else {
-      // ERROR!
-      // 1 = initial memory load failed
-      // 2 = DMP configuration updates failed
-      // (if it's going to break, usually the code will be 1)
-      Serial.print(F("DMP Initialization failed (code "));
-      Serial.print(devStatus);
-      Serial.println(F(")"));
-  }
-  
-  //RFID Setup:
-  // Initialize SPI bus
-  SPI.begin();
-  mfrc522.PCD_Init(); //Initialize MFRC522 card
-
-  //BT Setup:
   // Initialize Bluetooth
   BT.begin(9600);
-  // Initialize serial communications with PC
+  // Initialize serial communications with Computer
   Serial.begin(9600);
   
   attachInterrupt(digitalPinToInterrupt(Encoder_1_pin), doEncoder_1, CHANGE);
@@ -267,7 +231,7 @@ void setup() {
   pinMode(DC_M2_Speed, OUTPUT);
   pinMode(DC_M3_Speed, OUTPUT);
   pinMode(DC_M4_Speed, OUTPUT);
-  allWheelsSTOP();
+  DC_STOP = allWheelsSTOP();
   
   //Magnet
   pinMode(magnets, OUTPUT);
@@ -284,6 +248,7 @@ void setup() {
   pinMode(Seat_M_step,OUTPUT); digitalWrite(Seat_M_step, LOW);
   pinMode(Seat_L_step,OUTPUT); digitalWrite(Seat_L_step, LOW);
   pinMode(sleep_Stepper,OUTPUT); digitalWrite(sleep_Stepper, HIGH);
+  Stepper_STOP = allSteppersSTOP();
   
   // Pins for Encoders
   pinMode(Encoder_1_pin, INPUT);
@@ -316,40 +281,49 @@ void setup() {
 void loop() {
   // Check IMU
   if(!dmpReady){
+    if(print_to_COM){
     Serial.println("IMU not ready");
+    }
     return;
   }
 
-  // local speed calculation 
-  // via Bluetooth
-  char input;
-  if( BT.available() ){
-    input = (BT.read());
-    if(input=='1'){
-      v[0] = v[0]+10;
+  switch(state){
+    // STANDBY /////////////////////////////////////////////////
+    case 0:{
+      if(!DC_STOP){
+        DC_STOP = allWheelsSTOP();
+      }
+      if(!Stepper_STOP){
+        Stepper_STOP = allSteppersSTOP();
+      }
+      // Waiting for commands
+      char  command_buffer[20]; // stores entire command
+      char command = 'd'; //'d' = default
+      int arg1 = 0;
+      int arg2 = 0;
+      int arg3 = 0;
+      read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);
+      //Check/print command:
+      if(print_to_COM){
+        print_Command(command_buffer, &command, &arg1, &arg2, &arg3);       
+      }
+      switch(command){
+        case 'S': //'S'= switch -> switch to state defined in arg1 (see above)
+        {
+          state = arg1;          
+        }
+        default: {state = 0;}// Stay in STANDBY 
+      }
     }
-    else if (input=='2'){
-      v[0] = v[0]-10;
+    ////////////////////////////////////////////////////////////
+    // Driving /////////////////////////////////////////////////
+    case 1:{
+      
+            
     }
-    else if (input=='3'){
-      v[1] = v[1]+10;
-    }
-    else if (input=='4'){
-      v[1] = v[1]-10;
-    }
-    else if (input=='8'){
-      v[2] = v[2]-0.01;
-    }
-    else if (input=='A'){
-      v[2] = v[2]+0.01;
-    }
-    else if (input=='5'){v[0]=0; v[1]=0; v[2]=0; }
+    ////////////////////////////////////////////////////////////
+    default: {Serial.println("ERROR: No state selected");}
   }
-  if(v[0]==0&&v[0]==0&&v[0]==0){
-    STOP = allWheelsSTOP();
-  }
-  else {STOP = false;}
-
   // Tag reading
   buffer_size = sizeof(buffer);
   // Read NFC tag if available
@@ -413,7 +387,7 @@ void loop() {
     yaw_prev = ypr[0]; //Reste yaw angle to obtain difference later
   }
 
-  if(!STOP){// Compute PID results for DC motors if robot should move
+  if(!DC_STOP){// Compute PID results for DC motors if robot should move
     PID_DC1.Compute();
     PID_DC2.Compute();
     PID_DC3.Compute();
@@ -442,7 +416,168 @@ void loop() {
 
   Serial_diff_time = time - Serial_time;
   if(Serial_diff_time>1000){
-      Serial.println("\t w \t\t  w_should \t w_is \t dir_is \t PID_Out_DC \t DC_Input");
+    Print_Serial();
+    Serial_time = time;
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Read Bluetooth Commands
+void read_BT_command(char* command_buffer, char *command, int *arg1, int *arg2, int *arg3){
+  int input;
+  int i = 0;
+  while(1){
+    if ( BT.available() ) {
+        input = (BT.read());
+        command_buffer[i] = input;
+        i++;
+        if (input == '!') {
+            i = 2;
+            break;
+        }
+        delay(1);
+    } else {
+      if(print_to_COM)
+      {
+        Serial.println("Bluetooth not available");
+      }      
+    }
+  }    
+  *command = command_buffer[0];
+  //Converts subsequent characters in the array into integer as function argument
+  while (command_buffer[i] != '|') {
+      *arg1 *= 10;
+      *arg1 = *arg1 + (command_buffer[i] - 48);
+      i++;
+  }
+  i++;
+  while (command_buffer[i] != '|') {
+      *arg2 *= 10;
+      *arg2 = *arg2 + (command_buffer[i] - 48);
+      i++;
+  }
+  i++;
+  while (command_buffer[i] != '!') {
+      *arg3 *= 10;
+      *arg3 = *arg3 + (command_buffer[i] - 48);
+      i++;
+  }
+} 
+//////////////////////////////////////////////////////////////////////////////////////
+
+void print_Command(char * command_buffer, char * command, int * arg1, int * arg2, int * arg3){
+    Serial.print("Command Buffer: ");
+    Serial.println(command_buffer);
+    Serial.print("Command: ");
+    Serial.println(*command);
+    Serial.print("arg1: ");
+    Serial.println(*arg1);
+    Serial.print("arg2: ");
+    Serial.println(*arg2);
+    Serial.print("arg3: ");
+    Serial.println(*arg3);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+void doEncoder_1() {
+  Encoder_1.update();
+}
+void doEncoder_2() {
+  Encoder_2.update();
+}
+void doEncoder_3() {
+  Encoder_3.update();
+}
+void doEncoder_4() {
+  Encoder_4.update();
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+bool allWheelsSTOP(){
+  digitalWrite(DC_1.pin_dir, 0);
+  analogWrite(DC_1.pin_speed, 0);
+  digitalWrite(DC_2.pin_dir, 0);
+  analogWrite(DC_2.pin_speed, 0);
+  digitalWrite(DC_3.pin_dir, 0);
+  analogWrite(DC_3.pin_speed, 0);
+  digitalWrite(DC_4.pin_dir, 0);
+  analogWrite(DC_4.pin_speed, 0);
+  return true;
+  }
+
+//////////////////////////////////////////////////////////////////////////////////////
+bool allSteppersSTOP(){
+  digitalWrite(Wing_R_step, LOW);
+  digitalWrite(Wing_L_step, LOW);
+  digitalWrite(Seat_R_step, LOW);
+  digitalWrite(Seat_M_step, LOW);
+  digitalWrite(Seat_L_step, LOW);
+  return true;
+  }
+  
+//////////////////////////////////////////////////////////////////////////////////////
+  // Correct sign of w_is with w
+void include_sign(double * w, double * w_is, double * w_is_sign){
+  for(int i=0; i++; i<=4){
+    if(w[i]<0){
+      w_is_sign[i] = -w_is[i];
+    }
+    else {
+      w_is_sign[i] = w_is[i];
+    }
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+void Init_IMU_RFID(){
+  // MPU Setup:
+  // join I2C bus (I2Cdev library doesn't do this automatically)
+  #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
+      Wire.begin();
+      Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
+  #elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
+      Fastwire::setup(400, true);
+  #endif
+  
+  // initialize device
+  mpu.initialize();
+  devStatus = mpu.dmpInitialize();
+
+    // supply your own gyro offsets here, scaled for min sensitivity
+  mpu.setXGyroOffset(99);
+  mpu.setYGyroOffset(-31); //-30
+  mpu.setZGyroOffset(40); //41
+  mpu.setZAccelOffset(1483); // 1484
+
+  // make sure it worked (returns 0 if so)
+  if (devStatus == 0) {
+      // turn on the DMP, now that it's ready
+      Serial.println(F("Enabling DMP..."));
+      mpu.setDMPEnabled(true);
+
+      dmpReady = true;
+
+      // get expected DMP packet size for later comparison
+      packetSize = mpu.dmpGetFIFOPacketSize();
+      
+  } else {
+      // ERROR!
+      // 1 = initial memory load failed
+      // 2 = DMP configuration updates failed
+      // (if it's going to break, usually the code will be 1)
+      Serial.print(F("DMP Initialization failed (code "));
+      Serial.print(devStatus);
+      Serial.println(F(")"));
+  }
+  
+  //RFID Setup:
+  // Initialize SPI bus
+  SPI.begin();
+  mfrc522.PCD_Init(); //Initialize MFRC522 card
+}
+
+void Print_Serial(){
+  Serial.println("\t w \t\t  w_should \t w_is \t dir_is \t PID_Out_DC \t DC_Input");
       
       Serial.print("Wheel 1 \t");
       Serial.print(w[0]);
@@ -505,46 +640,8 @@ void loop() {
       Serial.println(Robot_Pose.odometryPose[2]);
       Serial.print("\n");
       Serial.print("\n");
-      Serial_time = time;
-  }
 }
-
-void doEncoder_1() {
-  Encoder_1.update();
-}
-void doEncoder_2() {
-  Encoder_2.update();
-}
-void doEncoder_3() {
-  Encoder_3.update();
-}
-void doEncoder_4() {
-  Encoder_4.update();
-}
-
-bool allWheelsSTOP(){
-  digitalWrite(DC_1.pin_dir, 0);
-  analogWrite(DC_1.pin_speed, 0);
-  digitalWrite(DC_2.pin_dir, 0);
-  analogWrite(DC_2.pin_speed, 0);
-  digitalWrite(DC_3.pin_dir, 0);
-  analogWrite(DC_3.pin_speed, 0);
-  digitalWrite(DC_4.pin_dir, 0);
-  analogWrite(DC_4.pin_speed, 0);
-  return true;
-  }
-
-  // Correct sign of w_is with w
-void include_sign(double * w, double * w_is, double * w_is_sign){
-  for(int i=0; i++; i<=4){
-    if(w[i]<0){
-      w_is_sign[i] = -w_is[i];
-    }
-    else {
-      w_is_sign[i] = w_is[i];
-    }
-  }
-}
+//////////////////////////////////////////////////////////////////////////////////////
 
 // Folding Functions for Wings
 void openWings(){
