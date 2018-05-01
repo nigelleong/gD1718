@@ -133,8 +133,8 @@ DC_motor DC_2(DC_M2_Dir, DC_M2_Speed, translation);
 DC_motor DC_3(DC_M3_Dir, DC_M3_Speed, translation);
 DC_motor DC_4(DC_M4_Dir, DC_M4_Speed, translation);
 
-bool DC_STOP = true; 
-bool Stepper_STOP = true; 
+bool DC_STOP;
+bool Stepper_STOP; 
 
 // Create Encoders
 Encoder Encoder_1(counts_per_round);
@@ -176,18 +176,19 @@ PID_x.SetOutputLimits(-v_max_x, v_max_x);
 PID_y.SetOutputLimits(-v_max_y, v_max_y);
 PID_theta.SetOutputLimits(-w_max, w_max);*/
 
-bool print_to_COM = false; //Print data da serial port (computer)
+bool print_to_COM = true; //Print data da serial port (computer)
 
 // States of the robot
 int state;
 /* switch(state){
  *  case(0): standby -> no mode selected, no movement, INITIAL Pose can be set
- *  case(1): driving -> Robot expects commands to move with velocity vector for a certain time
+ *  case(1): driving -> Robot expects commands to move with velocity vector for a certain time --> int drive_time
  *  case(3): folding -> Robot expects commands to fold
  *  case(4): not implemented: analog remote controll
  *  case(5): not implemented: predefined configurations
  *  case(6): not implemented: PID position control
  */
+ int drive_time = 3000; // drive for 3000 milliseconds
 
 // layouts / configurations
  int layout;
@@ -196,9 +197,24 @@ int state;
   *  case(1): peak hour lean
   *  case(2): peak hour seat
  */
+
+ // localization method
+ int loc_method;
+ /* switch(loc_method){
+  *  case(0): odometry = is default method
+  *  case(1): odometry + IMU
+  *  case(2): odometry + IMU + RFID
+ */
  
 void setup() {
+  // Set states, layout and localization method
   state = 0;
+  layout = 0;
+  loc_method = 0;
+  // Will be set to true when entering state 0 (STANDBY)
+  DC_STOP = false;
+  Stepper_STOP = false;
+  
   // Set speed in local frame
   v[0] = 0;
   v[1] = 0;
@@ -290,6 +306,7 @@ void loop() {
   switch(state){
     // STANDBY /////////////////////////////////////////////////
     case 0:{
+      // Stop all motors
       if(!DC_STOP){
         DC_STOP = allWheelsSTOP();
       }
@@ -310,17 +327,130 @@ void loop() {
       switch(command){
         case 'S': //'S'= switch -> switch to state defined in arg1 (see above)
         {
-          state = arg1;          
+          // Change and initialize states
+          change_state(arg1);
+          break;
+        }
+        case 'P': // Set global pose according to arguments
+        {
+          Robot_Pose.setglobalPose(arg1,arg2,arg3);
+          if(print_to_COM){
+            Serial.println("New pose: ");
+            Serial.print(Robot_Pose.globalPose[0],"\t");
+            Serial.print(Robot_Pose.globalPose[1],"\t");
+            Serial.println(Robot_Pose.globalPose[2]);
+          }
+          break;
         }
         default: {state = 0;}// Stay in STANDBY 
       }
+      break;
     }
     ////////////////////////////////////////////////////////////
     // Driving /////////////////////////////////////////////////
     case 1:{
-      
-            
-    }
+      // Waiting for commands
+      char  command_buffer[20]; // stores entire command
+      char command = 'd'; //'d' = default
+      int arg1 = 0;
+      int arg2 = 0;
+      int arg3 = 0;
+      read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);
+      //Check/print command:
+      if(print_to_COM){
+        print_Command(command_buffer, &command, &arg1, &arg2, &arg3);       
+      }
+      switch(command){
+        case 'S': //'S'= switch -> switch to state defined in arg1 (see above)
+        {
+          change_state(arg1);
+          break;
+        }
+        case 'L': // Change localization method (first argument)
+        {
+          change_loc_method(arg1);
+          break;
+        }
+        case 'M': //Moving with velocities defined by arg1-3 for a certain time
+        {
+          // Calculations of wheel speeds
+          v[0] = arg1;
+          v[1] = arg2;
+          v[2] = arg2;
+          if(v[0]==0&&v[1]==0&&v[2]==0){
+            DC_STOP = allWheelsSTOP();
+          }
+          // Calculate desired wheels speeds WITH SIGN
+          SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
+          // Desired wheel speeds WITHOUT SIGN (needed for PID controller
+          SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
+          
+          //
+          time = millis();
+          //driving for drive_time milliseconds
+          while(millis()-time<drive_time){
+            time_diff = time - time_prev;
+            // Localization
+            if (time_diff > encoder_frequency) {
+              //Calculate wheel speeds 
+              getEnconderSpeeds(time_diff);
+              // Calculate position via odometry
+              Robot_Pose.newPoseOdometry((float*)w_is_sign, SRTMecanum, time_diff);
+              switch(loc_method){
+                case 0: //odometry
+                {
+                  // new pose is odometry pose
+                  Robot_Pose.setglobalPose(Robot_Pose.odometryPose[0], Robot_Pose.odometryPose[1], Robot_Pose.odometryPose[2]);
+                  break;
+                }
+                case 1: //odometry + IMU
+                case 2: //odometry + IMU + RFID
+                {
+                  // read a packet from FIFO of IMU
+                  mpu.getFIFOBytes(fifoBuffer, packetSize);
+                  mpu.dmpGetQuaternion(&q, fifoBuffer);
+                  mpu.dmpGetGravity(&gravity, &q);
+                  mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+                  mpu.resetFIFO();
+                  //new angle according to IMU
+                  Robot_Pose.newAngleIMU(yaw_prev, ypr[0]);
+                  // Claculate new Pose by fusing yaw angle from IMU with odometry data
+                  KalmanOdoIMU.calcNewState((float*)w_is_sign, SRTMecanum, Robot_Pose, time_diff);
+                  Robot_Pose.setglobalPose(KalmanOdoIMU.new_State[0], KalmanOdoIMU.new_State[1], KalmanOdoIMU.new_State[2]);
+                  yaw_prev = ypr[0];
+                  break;
+                }
+              }
+              if(loc_method==2){
+                //discrete calman filter
+              }
+              time_prev = time; //Reset time to obtain the difference later
+            }          
+            if(!DC_STOP){// Compute PID results for DC motors and run DC motors
+              run_DC();
+            }
+            if(print_to_COM){
+              Print_Serial();
+            }
+          }
+          DC_STOP = allWheelsSTOP();
+          break;
+        }
+        case 'P': // Set global pose according to arguments
+        {
+          Robot_Pose.setglobalPose(arg1,arg2,arg3);
+          if(print_to_COM){
+            Serial.println("New pose: ");
+            Serial.print(Robot_Pose.globalPose[0],"\t");
+            Serial.print(Robot_Pose.globalPose[1],"\t");
+            Serial.println(Robot_Pose.globalPose[2]);
+          }
+          break;
+        }
+        default: {} 
+      }
+      break;      
+    } 
     ////////////////////////////////////////////////////////////
     default: {Serial.println("ERROR: No state selected");}
   }
@@ -350,75 +480,7 @@ void loop() {
   // Desired wheel speeds WITHOUT SIGN (needed for PID controller
   SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
   
-  // Determine position derived from odometry and IMU
-  fifoCount = mpu.getFIFOCount(); // Get size of FIFO buffer of IMU
-  time = millis();
-  time_diff = time - time_prev;
-  if (time_diff > encoder_frequency && fifoCount > packetSize) { //time_diff has to have a certain size and IMU FIFO must be big enough
-    // Get speed in rad/sec from encoders!! (WITHOUT SIGN)
-    w_is[0] = Encoder_1.calcSpeed(time_diff);
-    Encoder_1.count = 0;
-    w_is[1] = Encoder_2.calcSpeed(time_diff);
-    Encoder_2.count = 0;
-    w_is[2] = Encoder_3.calcSpeed(time_diff);
-    Encoder_3.count = 0;
-    w_is[3] = Encoder_4.calcSpeed(time_diff);
-    Encoder_4.count = 0;
-    //Add Sign assuming all wheels rotate with the correct direction
-    include_sign(w, w_is, w_is_sign);
-
-    // read a packet from FIFO of IMU
-    mpu.getFIFOBytes(fifoBuffer, packetSize);
-    mpu.dmpGetQuaternion(&q, fifoBuffer);
-    mpu.dmpGetGravity(&gravity, &q);
-    mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-    //Serial.print("Yaw:\t");
-    //Serial.println(ypr[0]*180/M_PI);
-    mpu.resetFIFO();
-      
-    // Calculate position calculated from odometry
-    Robot_Pose.newPoseOdometry((float*)w_is_sign, SRTMecanum, time_diff);
-    Robot_Pose.newAngleIMU(yaw_prev, ypr[0]); //yaw_prev and ypr in degrees (euler) but result in radian!!
-    // Claculate new Pose by fusing yaw angle from IMU with odometry data
-    KalmanOdoIMU.calcNewState((float*)w_is_sign, SRTMecanum, Robot_Pose, time_diff);
-    Robot_Pose.setglobalPose(KalmanOdoIMU.new_State[0], KalmanOdoIMU.new_State[1], KalmanOdoIMU.new_State[2]);
-    
-    time_prev = time; //Reset time to obtain the difference later
-    yaw_prev = ypr[0]; //Reste yaw angle to obtain difference later
-  }
-
-  if(!DC_STOP){// Compute PID results for DC motors if robot should move
-    PID_DC1.Compute();
-    PID_DC2.Compute();
-    PID_DC3.Compute();
-    PID_DC4.Compute();
-    // Map wheel speeds to value between 0 and 255 to run DC-motors
-    DC_1.map_wheelspeed(w[0],PID_Out_DC[0]);
-    DC_2.map_wheelspeed(w[1],PID_Out_DC[1]);
-    DC_3.map_wheelspeed(w[2],PID_Out_DC[2]);
-    DC_4.map_wheelspeed(w[3],PID_Out_DC[3]);
   
-    // Run DC-motors
-    digitalWrite(DC_1.pin_dir, DC_1.dir);
-    analogWrite(DC_1.pin_speed, DC_1.mapped_speed);
-    digitalWrite(DC_2.pin_dir, DC_2.dir);
-    analogWrite(DC_2.pin_speed, DC_2.mapped_speed);
-    digitalWrite(DC_3.pin_dir, DC_3.dir);
-    analogWrite(DC_3.pin_speed, DC_3.mapped_speed);
-    digitalWrite(DC_4.pin_dir, DC_4.dir);
-    analogWrite(DC_4.pin_speed, DC_4.mapped_speed);
-  }
-  else{
-    for(int i=0;i<4;i++){
-      PID_Out_DC[i] = 0;
-    }
-  } 
-
-  Serial_diff_time = time - Serial_time;
-  if(Serial_diff_time>1000){
-    Print_Serial();
-    Serial_time = time;
-  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -464,7 +526,7 @@ void read_BT_command(char* command_buffer, char *command, int *arg1, int *arg2, 
   }
 } 
 //////////////////////////////////////////////////////////////////////////////////////
-
+// Print Bluetooth Command
 void print_Command(char * command_buffer, char * command, int * arg1, int * arg2, int * arg3){
     Serial.print("Command Buffer: ");
     Serial.println(command_buffer);
@@ -476,6 +538,80 @@ void print_Command(char * command_buffer, char * command, int * arg1, int * arg2
     Serial.println(*arg2);
     Serial.print("arg3: ");
     Serial.println(*arg3);
+}
+///////////////////////////////////////////////////
+void change_loc_method(int arg1){
+  loc_method = arg1;
+  switch(arg1){
+    case 0: {break;}
+    case 1:
+    case 2: 
+    {
+      mpu.resetFIFO();
+      fifoCount = mpu.getFIFOCount();
+      while(fifoCount < packetSize){
+        fifoCount = mpu.getFIFOCount();
+      }
+      // read a packet from FIFO of IMU
+      mpu.getFIFOBytes(fifoBuffer, packetSize);
+      mpu.dmpGetQuaternion(&q, fifoBuffer);
+      mpu.dmpGetGravity(&gravity, &q);
+      mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+      mpu.resetFIFO();
+      yaw_prev = ypr[0];
+      break;
+      }
+  }
+  if(print_to_COM){
+    switch(arg1){     
+      case 0: {Serial.println("Localization method changed to: ODOMETRY"); break;}      
+      case 1: 
+      {
+        Serial.println("Localization method changed to: ODOMETRY + IMU"); 
+        Serial.print("Current yaw-angle: ");
+        Serial.println(yaw_prev);
+        break;
+      }      
+      case 2: 
+      {
+        Serial.println("Localization method changed to: ODOMETRY + IMU + RFID");
+        Serial.print("Current yaw-angle: ");
+        Serial.println(yaw_prev); 
+        break;
+      }            
+    }
+  }
+}
+void change_state(int arg1){
+  state = arg1;
+  switch(arg1){     
+    case 1: 
+    {
+      loc_method = 0;
+      // Stop all Stepper motors
+      if(!Stepper_STOP){
+        Stepper_STOP = allSteppersSTOP();
+      }
+    }      
+    case 3: {loc_method = 0;}      
+    case 4: {loc_method = 2;}  
+    case 5: {loc_method = 2;}          
+  }
+  if(print_to_COM){
+    switch(arg1){
+      case 0: {Serial.println("Change state to STANDBY");}      
+      case 1: {Serial.println("Change state to DRIVING");
+               Serial.println("Default localization method: odometry");}    
+      case 2: {Serial.println("Change state to FOLDING");}    
+      case 3: {Serial.println("Change state to REMOTE CONTROL");
+               Serial.println("Default localization method: odometry");}      
+      case 4: {Serial.println("Change state to LAYOUT");
+               Serial.println("Default localization method: odometry + IMU + RFID");}  
+      case 5: {Serial.println("Change state to PID POSITION CONTROL");
+               Serial.println("Default localization method: odometry + IMU + RFID");} 
+      default: {Serial.println("Not a valid Mode!!");}         
+    }
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -492,6 +628,46 @@ void doEncoder_4() {
   Encoder_4.update();
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
+// calculate wheel speeds form encoders
+void getEnconderSpeeds(int time_diff){
+  // Get speed in rad/sec from encoders!! (WITHOUT SIGN)
+  w_is[0] = Encoder_1.calcSpeed(time_diff);
+  Encoder_1.count = 0;
+  w_is[1] = Encoder_2.calcSpeed(time_diff);
+  Encoder_2.count = 0;
+  w_is[2] = Encoder_3.calcSpeed(time_diff);
+  Encoder_3.count = 0;
+  w_is[3] = Encoder_4.calcSpeed(time_diff);
+  Encoder_4.count = 0;
+  //Add Sign assuming all wheels rotate with the correct direction
+  include_sign();
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+// Run DC motors
+void run_DC(){
+  PID_DC1.Compute();
+  PID_DC2.Compute();
+  PID_DC3.Compute();
+  PID_DC4.Compute();
+  // Map wheel speeds to value between 0 and 255 to run DC-motors
+  DC_1.map_wheelspeed(w[0],PID_Out_DC[0]);
+  DC_2.map_wheelspeed(w[1],PID_Out_DC[1]);
+  DC_3.map_wheelspeed(w[2],PID_Out_DC[2]);
+  DC_4.map_wheelspeed(w[3],PID_Out_DC[3]);
+
+  // Run DC-motors
+  digitalWrite(DC_1.pin_dir, DC_1.dir);
+  analogWrite(DC_1.pin_speed, DC_1.mapped_speed);
+  digitalWrite(DC_2.pin_dir, DC_2.dir);
+  analogWrite(DC_2.pin_speed, DC_2.mapped_speed);
+  digitalWrite(DC_3.pin_dir, DC_3.dir);
+  analogWrite(DC_3.pin_speed, DC_3.mapped_speed);
+  digitalWrite(DC_4.pin_dir, DC_4.dir);
+  analogWrite(DC_4.pin_speed, DC_4.mapped_speed);
+}
+              
 //////////////////////////////////////////////////////////////////////////////////////
 bool allWheelsSTOP(){
   digitalWrite(DC_1.pin_dir, 0);
@@ -517,7 +693,7 @@ bool allSteppersSTOP(){
   
 //////////////////////////////////////////////////////////////////////////////////////
   // Correct sign of w_is with w
-void include_sign(double * w, double * w_is, double * w_is_sign){
+void include_sign(){
   for(int i=0; i++; i<=4){
     if(w[i]<0){
       w_is_sign[i] = -w_is[i];
@@ -778,4 +954,76 @@ void foldSeats_M_down(){
     delay(stepDelay_Seats);
   } 
 }
+
+
+//BACKUP
+/*// Determine position derived from odometry and IMU
+          fifoCount = mpu.getFIFOCount(); // Get size of FIFO buffer of IMU
+          time = millis();
+          time_diff = time - time_prev;
+          if (time_diff > encoder_frequency && fifoCount > packetSize) { //time_diff has to have a certain size and IMU FIFO must be big enough
+            // Get speed in rad/sec from encoders!! (WITHOUT SIGN)
+            w_is[0] = Encoder_1.calcSpeed(time_diff);
+            Encoder_1.count = 0;
+            w_is[1] = Encoder_2.calcSpeed(time_diff);
+            Encoder_2.count = 0;
+            w_is[2] = Encoder_3.calcSpeed(time_diff);
+            Encoder_3.count = 0;
+            w_is[3] = Encoder_4.calcSpeed(time_diff);
+            Encoder_4.count = 0;
+            //Add Sign assuming all wheels rotate with the correct direction
+            include_sign(w, w_is, w_is_sign);
+        
+            // read a packet from FIFO of IMU
+            mpu.getFIFOBytes(fifoBuffer, packetSize);
+            mpu.dmpGetQuaternion(&q, fifoBuffer);
+            mpu.dmpGetGravity(&gravity, &q);
+            mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+            //Serial.print("Yaw:\t");
+            //Serial.println(ypr[0]*180/M_PI);
+            mpu.resetFIFO();
+              
+            // Calculate position calculated from odometry
+            Robot_Pose.newPoseOdometry((float*)w_is_sign, SRTMecanum, time_diff);
+            Robot_Pose.newAngleIMU(yaw_prev, ypr[0]); //yaw_prev and ypr in degrees (euler) but result in radian!!
+            // Claculate new Pose by fusing yaw angle from IMU with odometry data
+            KalmanOdoIMU.calcNewState((float*)w_is_sign, SRTMecanum, Robot_Pose, time_diff);
+            Robot_Pose.setglobalPose(KalmanOdoIMU.new_State[0], KalmanOdoIMU.new_State[1], KalmanOdoIMU.new_State[2]);
+            
+            time_prev = time; //Reset time to obtain the difference later
+            yaw_prev = ypr[0]; //Reste yaw angle to obtain difference later
+          }
+        
+          if(!DC_STOP){// Compute PID results for DC motors if robot should move
+            PID_DC1.Compute();
+            PID_DC2.Compute();
+            PID_DC3.Compute();
+            PID_DC4.Compute();
+            // Map wheel speeds to value between 0 and 255 to run DC-motors
+            DC_1.map_wheelspeed(w[0],PID_Out_DC[0]);
+            DC_2.map_wheelspeed(w[1],PID_Out_DC[1]);
+            DC_3.map_wheelspeed(w[2],PID_Out_DC[2]);
+            DC_4.map_wheelspeed(w[3],PID_Out_DC[3]);
+          
+            // Run DC-motors
+            digitalWrite(DC_1.pin_dir, DC_1.dir);
+            analogWrite(DC_1.pin_speed, DC_1.mapped_speed);
+            digitalWrite(DC_2.pin_dir, DC_2.dir);
+            analogWrite(DC_2.pin_speed, DC_2.mapped_speed);
+            digitalWrite(DC_3.pin_dir, DC_3.dir);
+            analogWrite(DC_3.pin_speed, DC_3.mapped_speed);
+            digitalWrite(DC_4.pin_dir, DC_4.dir);
+            analogWrite(DC_4.pin_speed, DC_4.mapped_speed);
+          }
+          else{
+            for(int i=0;i<4;i++){
+              PID_Out_DC[i] = 0;
+            }
+          } 
+        
+          Serial_diff_time = time - Serial_time;
+          if(Serial_diff_time>1000){
+            Print_Serial();
+            Serial_time = time;
+          }*/
 
