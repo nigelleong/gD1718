@@ -64,19 +64,19 @@ public class standbyController extends AppCompatActivity implements View.OnClick
             case R.id.btn_driving:
                 Intent drivingIntent = new Intent(standbyController.this, drivingController.class);
                 drivingIntent.putExtra(EXTRA_BT_SOCKET, bluetoothSocketHelper);
-                bluetoothSocketHelper.setBluetoothSocket(btSocket);
+//                bluetoothSocketHelper.setBluetoothSocket(btSocket);
                 startActivity(drivingIntent);
                 break;
             case R.id.btn_folding:
                 Intent foldingIntent = new Intent(standbyController.this, foldingController.class);
                 foldingIntent.putExtra(EXTRA_BT_SOCKET, bluetoothSocketHelper);
-                bluetoothSocketHelper.setBluetoothSocket(btSocket);
+//                bluetoothSocketHelper.setBluetoothSocket(btSocket);
                 startActivity(foldingIntent);
                 break;
             case R.id.btn_analog:
                 Intent analogIntent = new Intent(standbyController.this, analogController.class);
                 analogIntent.putExtra(EXTRA_BT_SOCKET, bluetoothSocketHelper);
-                bluetoothSocketHelper.setBluetoothSocket(btSocket);
+//                bluetoothSocketHelper.setBluetoothSocket(btSocket);
                 startActivity(analogIntent);
                 break;
 
@@ -132,6 +132,7 @@ public class standbyController extends AppCompatActivity implements View.OnClick
             {
                 toastMsg("Connected!");
                 isBtConnected = true;
+                bluetoothSocketHelper.setBluetoothSocket(btSocket);
             }
             progress.dismiss();
         }
