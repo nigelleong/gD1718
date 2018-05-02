@@ -8,6 +8,7 @@ void setup()
 {
     // set digital pin to control as an output
     pinMode(LED_BUILTIN, OUTPUT);
+    
     BT.begin(9600);
     Serial.begin(9600);
     
@@ -20,7 +21,6 @@ void loop()
     /* Declare global variables */
     char  input; // stores incoming character from other device
     char  command_buffer[20];
-    String  command = "";  //just for debugging
     
     int   i = 0;
     int   arg1 = 0;
@@ -29,30 +29,23 @@ void loop()
 
     while (1) {
         if ( BT.available() ) {
-            input = BT.read();
-            Serial.print("input: ");
-            Serial.print(input);
-            Serial.println();
+            input =  (BT.read());
+             //Serial.print(input);
             command_buffer[i] = input;
-            command  += input;    //just for debugging
-            
-            /* just for debugging*/
-            break;
-                    
-//            i++;
-//            if (input == '!') {       /* setting pointer back to argument */
-//                i = 2;
-//                Serial.println("Input=!");
-//                break;
-//            }
-
+            i++;
+            if (input == '!') {       /* setting pointer back to argument */
+                i = 2;
+                //Serial.println("Input=!");
+                break;
+            }
             delay(1);
         } else {
-            BT.println("not available");
+          
+            //Serial.println("Bluetooth not available");
         }
     }    
 
-    Serial.println(command);  //just for debugging
+    Serial.println(command_buffer);  //just for debugging
 
     //Converts subsequent characters in the array into integer as function argument
     while (command_buffer[i] != '|') {
@@ -96,19 +89,19 @@ void loop()
     switch (command_buffer[0]) {
       case '1':                     /* turn on led */
       {
-          BT.println("LED on");
+          //BT.println("LED on");
           digitalWrite(LED_BUILTIN, HIGH);
           break;
       }   
       case '0':                     /* turn off led */
       {
-          BT.println("LED off");
+          //BT.println("LED off");
           digitalWrite(LED_BUILTIN, LOW);
           break;
       }
       case 'B':                     /* blink led */
       {
-          BT.println("Blink LED");
+          //BT.println("Blink LED");
           blinkLED(arg1);
           break;
       }
@@ -121,7 +114,6 @@ void loop()
       case 'W':                     /* move robot */
       {
           //call function : move robot with |Xvelocity|Yvelocity|
-          Serial.println("MOVE");
           robotFoldWings(arg1, arg2, arg3);
           break;
       }
@@ -133,12 +125,12 @@ void loop()
       }  
       default :                     /* help */ 
       {    
-          BT.println("Send '1|||!' to turn LED on");
+         /* BT.println("Send '1|||!' to turn LED on");
           BT.println("Send '0|||!' to turn LED off");
           BT.println("Send 'B|5||!' to blink LED 5 times");
           BT.println("Send 'W|||!' to fold wings");
           BT.println("Send 'S|||!' to fold seat");
-          BT.println("Send 'M|2000|1000|0!' to move 2000mm/sec in x, 1000mm/sec, 0 change in degree");
+          BT.println("Send 'M|2000|1000|0!' to move 2000mm/sec in x, 1000mm/sec, 0 change in degree");*/
       }
       memset(command_buffer, 0, sizeof(command_buffer));
     }
@@ -158,10 +150,7 @@ void  robotMove ( int arg1,
                   int arg2,
                   int arg3)
 {
-    Serial.println("arg1: " + arg1);
-    Serial.println("arg2 :" + arg2);
-    Serial.println("arg3 :" + arg3);
-    Serial.println();
+
 }
 
 void  robotFoldSeat ( int arg1,
