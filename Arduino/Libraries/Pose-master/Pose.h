@@ -14,7 +14,10 @@ private:
 	float Trafo[3][3];
 	float Trafo_inv[3][3];
 	void calcTrafo(float);
+	
+	
 public:	
+	float calc_v_to_Pose_should(float*, float, float);	//float* v, float max speed, float max rotationsl speed
 	float globalPose_should[3];
 	float globalPose[3];
 	float odometryPose[3];

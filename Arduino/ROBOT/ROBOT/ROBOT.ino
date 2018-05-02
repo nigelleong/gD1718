@@ -63,7 +63,7 @@ const int Encoder_4_pin = 19;
 // Dimensions of Robot
 float l_x = 225.5;
 float l_y = 217.5;
-float R = 60;
+float R = 30;
 
 // Dimenstions of operation area:
 float area_x = 1250;
@@ -71,8 +71,8 @@ float area_y = 1250;
 float safe_dis = 325; // safety distance to the edge of the stage
 
 // Maximal Speeds in mm/s and rad/s
-const float v_max_x = 10;
-const float v_max_y = 10;
+const float v_max_x = 150;
+const float v_max_y = 150;
 const float w_max = 1;
 
 // translation of gearbox
@@ -374,78 +374,20 @@ void loop() {
             }
           }
 
-          // Reset Encoders and Reset FiFo buffer of IMU
+          // Reset Encoders and Reset FiFo buffer of IMU and get current yaw angle from IMU
           getEnconderSpeeds(50);
           mpu.resetFIFO();
+          get_IMU_yaw();
+          yaw_prev = ypr[0];
           // Initialize times
           time = millis();
+          
+          //time_prev NEEDED for localization: Before starting localization always ste time_prev to millis!!
           time_prev = millis();
           
           //driving for drive_time milliseconds
           while(millis()-time<drive_time){
-            time_diff = millis() - time_prev;
-            // Localization
-            if (time_diff > encoder_frequency) {
-              //Calculate wheel speeds 
-              getEnconderSpeeds(time_diff);
-              // Calculate position via odometry
-              Robot_Pose.newPoseOdometry((float*)w_is_sign, SRTMecanum, time_diff);
-              switch(loc_method){
-                case 0: //odometry
-                {
-                  // new pose is odometry pose
-                  Robot_Pose.setglobalPose(Robot_Pose.odometryPose[0], Robot_Pose.odometryPose[1], Robot_Pose.odometryPose[2]);
-                  break;
-                }
-                case 1: //odometry + IMU
-                case 2: //odometry + IMU + RFID
-                {
-                  // read a packet from FIFO of IMU
-                  mpu.getFIFOBytes(fifoBuffer, packetSize);
-                  mpu.dmpGetQuaternion(&q, fifoBuffer);
-                  mpu.dmpGetGravity(&gravity, &q);
-                  mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-                  mpu.resetFIFO();
-                  //new angle according to IMU
-                  Robot_Pose.newAngleIMU(yaw_prev, ypr[0]);
-                  // Claculate new Pose by fusing yaw angle from IMU with odometry data
-                  KalmanOdoIMU.calcNewState((float*)w_is_sign, SRTMecanum, Robot_Pose, time_diff);
-                  Robot_Pose.setglobalPose(KalmanOdoIMU.new_State[0], KalmanOdoIMU.new_State[1], KalmanOdoIMU.new_State[2]);
-                  yaw_prev = ypr[0];
-                  break;
-                }
-              }
-              
-              // Reset time for Encoder
-              time_prev = millis();
-              // Print localization results
-              if(print_to_COM){
-                Print_Serial_Localization();
-              }
-            }
-            // Include RFID readings
-            if(loc_method==2){
-              // Tag reading
-              buffer_size = sizeof(buffer);
-              // Read NFC tag if available
-              if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()){
-                status = (MFRC522::StatusCode) mfrc522.MIFARE_Read(pageAddr, buffer, &buffer_size);
-                if (status != MFRC522::STATUS_OK) {
-                  if(print_to_COM){
-                    Serial.print(F("MIFARE_Read() failed: "));
-                    Serial.println(mfrc522.GetStatusCodeName(status));
-                  }
-                }    
-                float tag_x;
-                float tag_y;
-                KalmanNFC.newTagdetected(tag_x, tag_y);
-                KalmanNFC.orientationRobot(Robot_Pose);
-                KalmanNFC.calcNewState(Robot_Pose);
-                Robot_Pose.setglobalPose(KalmanNFC.new_State[0], KalmanNFC.new_State[1], KalmanNFC.new_State[2]);
-              }
-              mfrc522.PICC_HaltA();
-              
-            }          
+            localize_Robot();          
             if(!DC_STOP){// Compute PID results for DC motors and run DC motors
               run_DC();
             }
@@ -464,7 +406,9 @@ void loop() {
       break;      
     }
     ////////////////////////////////////////////////////////////
-    case 2:  // FOLDING
+    // FOLDING /////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////
+    case 2: 
     {
       // Waiting for commands
       read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);
@@ -490,6 +434,12 @@ void loop() {
       break;
     }
     ////////////////////////////////////////////////////////////
+    // REMOTE CONTROL //////////////////////////////////////////
+    ////////////////////////////////////////////////////////////
+    case '3':
+    {
+      
+    }
     // Default case
     default: 
     {
@@ -589,11 +539,7 @@ void change_loc_method(int arg1){
         fifoCount = mpu.getFIFOCount();
       }
       // read a packet from FIFO of IMU
-      mpu.getFIFOBytes(fifoBuffer, packetSize);
-      mpu.dmpGetQuaternion(&q, fifoBuffer);
-      mpu.dmpGetGravity(&gravity, &q);
-      mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-      mpu.resetFIFO();
+      get_IMU_yaw();
       yaw_prev = ypr[0];
       break;
       }
@@ -770,7 +716,7 @@ bool allWheelsSTOP(){
   analogWrite(DC_3.pin_speed, 0);
   digitalWrite(DC_4.pin_dir, 0);
   analogWrite(DC_4.pin_speed, 0);
-  delay(500);
+  delay(1000);
   getEnconderSpeeds(50);
   delay(50);
   getEnconderSpeeds(50);
@@ -781,6 +727,10 @@ bool allWheelsSTOP(){
   PID_Out_DC[1] = 0;
   PID_Out_DC[2] = 0;
   PID_Out_DC[3] = 0;
+  DC_1.map_wheelspeed(w[0],PID_Out_DC[0]);
+  DC_2.map_wheelspeed(w[1],PID_Out_DC[1]);
+  DC_3.map_wheelspeed(w[2],PID_Out_DC[2]);
+  DC_4.map_wheelspeed(w[3],PID_Out_DC[3]);
   PID_DC1.Initialize();
   PID_DC2.Initialize();
   PID_DC3.Initialize();
@@ -811,6 +761,15 @@ void include_sign(){
   }
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
+
+void get_IMU_yaw(){
+  mpu.getFIFOBytes(fifoBuffer, packetSize);
+  mpu.dmpGetQuaternion(&q, fifoBuffer);
+  mpu.dmpGetGravity(&gravity, &q);
+  mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+  mpu.resetFIFO();
+}
 //////////////////////////////////////////////////////////////////////////////////////
 void Init_IMU_RFID(){
   // MPU Setup:
@@ -1119,3 +1078,75 @@ void foldSeats_R_down(){
   } 
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////// LOCALIZATION ALGORITHM /////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//time_prev NEEDED for localization: Before starting localization always ste time_prev to millis!!
+void localize_Robot(){
+  time_diff = millis() - time_prev;
+  // Localization
+  if (time_diff > encoder_frequency) {
+    //Calculate wheel speeds 
+    getEnconderSpeeds(time_diff);
+    // Calculate position via odometry
+    Robot_Pose.newPoseOdometry((float*)w_is_sign, SRTMecanum, time_diff);
+    switch(loc_method){
+      case 0: //odometry
+      {
+        // new pose is odometry pose
+        Robot_Pose.setglobalPose(Robot_Pose.odometryPose[0], Robot_Pose.odometryPose[1], Robot_Pose.odometryPose[2]);
+        break;
+      }
+      case 1: //odometry + IMU
+      case 2: //odometry + IMU + RFID
+      {
+        // read a packet from FIFO of IMU
+        get_IMU_yaw(); //writes to ypr[0];
+        //new angle according to IMU
+        Robot_Pose.newAngleIMU(yaw_prev, ypr[0]);
+        // Claculate new Pose by fusing yaw angle from IMU with odometry data
+        KalmanOdoIMU.calcNewState((float*)w_is_sign, SRTMecanum, Robot_Pose, time_diff);
+        Robot_Pose.setglobalPose(KalmanOdoIMU.new_State[0], KalmanOdoIMU.new_State[1], KalmanOdoIMU.new_State[2]);
+        yaw_prev = ypr[0];
+        break;
+      }
+    }
+    
+    // Reset time for Encoder
+    time_prev = millis();
+    // Print localization results
+    if(print_to_COM){
+      Print_Serial_Localization();
+    }
+  }
+  // Include RFID readings
+  if(loc_method==2){
+    // Tag reading
+    buffer_size = sizeof(buffer);
+    // Read NFC tag if available
+    if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()){
+      status = (MFRC522::StatusCode) mfrc522.MIFARE_Read(pageAddr, buffer, &buffer_size);
+      if (status != MFRC522::STATUS_OK) {
+        if(print_to_COM){
+          Serial.print(F("MIFARE_Read() failed: "));
+          Serial.println(mfrc522.GetStatusCodeName(status));
+        }
+      }    
+      float tag_x;
+      float tag_y;
+      KalmanNFC.newTagdetected(tag_x, tag_y);
+      if(print_to_COM){
+        Serial.print("Tag: x = ");
+        Serial.print(tag_x);
+        Serial.print("  y = ");
+        Serial.print(tag_y);
+        Serial.println("   detected");
+      }
+      KalmanNFC.orientationRobot(Robot_Pose);
+      KalmanNFC.calcNewState(Robot_Pose);
+      Robot_Pose.setglobalPose(KalmanNFC.new_State[0], KalmanNFC.new_State[1], KalmanNFC.new_State[2]);
+    }
+    mfrc522.PICC_HaltA(); 
+  }
+}
