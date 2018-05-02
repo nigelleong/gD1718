@@ -21,7 +21,7 @@ const int SDA_PIN = 53;
 const int RST_PIN = 5;
 // SCK to 52; MOSI to 51; MISO to 50; 
 
-// Bluetooth connection pins 10 and 11
+// Bluetooth connection pins 5V TXD to 10 and RXD to 11
 SoftwareSerial BT(10, 11); 
 
 // Define pins for DC-motors
@@ -153,9 +153,13 @@ double w[4]; // desired rotational wheel speed WITH SIGN
 double w_should[4]; // Desired rotational wheel speeds WITHOUT SIGN
 double w_is[4]; // measured rotational wheel speeds WITHOUT SIGN
 double w_is_sign[4]; // measured rotational wheel speeds WITH SIGN
-double PID_Out_DC[4]; //Output of PID controler
+
+// global speeds and positions
+double dist_Pose[3]; // Distance between pose_should and global Pose
+double v_global[3]; // desired speed in global frame
 
 // Create PID for DC motors // Output limit is 0-255 by default
+double PID_Out_DC[4]; //Output of PID controler
 double Kp_DC = 10, Ki_DC = 90, Kd_DC = 0;
 PID PID_DC1(&w_is[0], &PID_Out_DC[0], &w_should[0], Kp_DC, Ki_DC, Kd_DC, DIRECT);
 PID PID_DC2(&w_is[1], &PID_Out_DC[1], &w_should[1], Kp_DC, Ki_DC, Kd_DC, DIRECT);
@@ -291,13 +295,6 @@ void setup() {
 }
 
 void loop() {
-  // Check IMU
-  if(!dmpReady){
-    if(print_to_COM){
-    Serial.println("IMU not ready");
-    }
-    return;
-  }
   //Command Variables
   char  command_buffer[20]; // stores entire command
   char command = 'd'; //'d' = default
@@ -356,7 +353,7 @@ void loop() {
           // Calculations of wheel speeds
           v[0] = arg1;
           v[1] = arg2;
-          v[2] = arg2;
+          v[2] = arg3;
           if(v[0]==0&&v[1]==0&&v[2]==0){
             DC_STOP = allWheelsSTOP();
           }
@@ -368,9 +365,9 @@ void loop() {
           // Print header for localization results
           if(print_to_COM){
             switch(loc_method){
-              case 0: {Serial.println("Pose odometry:   x   y   \theta");}
-              case 1: {Serial.println("Pose odometry:   x   y   \theta    Angle IMU:  \theta    Pose Kalman:    x   y   \theta");}
-              case 2: {Serial.println("Pose odometry:   x   y   \theta    Angle IMU:  \theta    Pose Kalman:    x   y   \theta    Pose Kalman RFID    x   y   \theta");}    
+              case 0: {Serial.println("Pose odometry:   x \t y \t theta"); break;}
+              case 1: {Serial.println("Pose odometry:   x \t y \t theta    Angle IMU:   theta    Pose Kalman:    x \t y \t theta"); break;}
+              case 2: {Serial.println("Pose odometry:   x \t y \t theta    Angle IMU:   theta    Pose Kalman:    x \t y \t theta    Pose Kalman RFID    x \t y \t theta"); break;}    
             }
           }
 
@@ -449,7 +446,6 @@ void loop() {
       break;
     }
   }
-
 }
 
 
@@ -473,29 +469,50 @@ void read_BT_command(char* command_buffer, char *command, int *arg1, int *arg2, 
     } else {
       if(print_to_COM)
       {
-        Serial.println("Bluetooth not available");
+        //Serial.println("Bluetooth not available");
       }      
     }
   }    
   *command = command_buffer[0];
   //Converts subsequent characters in the array into integer as function argument
+  int sign = 1;
   while (command_buffer[i] != '|') {
-      *arg1 *= 10;
-      *arg1 = *arg1 + (command_buffer[i] - 48);
+      if(command_buffer[i] == '-'){
+        sign = -1;
+      }
+      else{
+        *arg1 *= 10;
+        *arg1 = *arg1 + (command_buffer[i] - 48);
+      }
       i++;
   }
+  *arg1 *= sign;
   i++;
+  sign = 1;
   while (command_buffer[i] != '|') {
-      *arg2 *= 10;
-      *arg2 = *arg2 + (command_buffer[i] - 48);
+      if(sign == 1 && command_buffer[i] == '-'){
+        sign = -1;
+      }
+      else{
+        *arg2 *= 10;
+        *arg2 = *arg2 + (command_buffer[i] - 48);
+      }
       i++;
   }
+  *arg2 *= sign;
   i++;
+  sign = 1;
   while (command_buffer[i] != '!') {
+      if(sign == 1 && command_buffer[i] == '-'){
+        sign = -1;
+      }
+      else{
       *arg3 *= 10;
       *arg3 = *arg3 + (command_buffer[i] - 48);
+      }
       i++;
   }
+  *arg3 *= sign;
     //Check/print command:
   if(print_to_COM){
     Serial.print("Command Buffer: ");
@@ -529,6 +546,14 @@ void change_loc_method(int arg1){
     case 1:
     case 2: 
     {
+        // Check IMU
+      if(!dmpReady){
+        if(print_to_COM){
+        Serial.println("IMU not ready");
+        }
+        change_loc_method(0);//change to odometry only 
+        return;
+      }
       // Set detected tag to current position
       KalmanNFC.tag_det[0] = Robot_Pose.globalPose[0];
       KalmanNFC.tag_det[1] = Robot_Pose.globalPose[1]; 
@@ -612,12 +637,12 @@ void change_state(int arg1){
     switch(arg1){
       case 0: 
       {
-        Serial.println("Change state to STANDBY");
+        Serial.println("State changed to STANDBY");
         break;
       }      
       case 1: 
       {
-        Serial.println("Change state to DRIVING");
+        Serial.println("State changed to DRIVING");
         Serial.print("Each movement is: ");
         Serial.print(drive_time);
         Serial.println(" milliseconds long");
@@ -626,24 +651,24 @@ void change_state(int arg1){
       }    
       case 2: 
       {
-        Serial.println("Change state to FOLDING");
+        Serial.println("State changed to FOLDING");
         break;
       }    
       case 3: 
       {
-        Serial.println("Change state to REMOTE CONTROL");
+        Serial.println("State changed to REMOTE CONTROL");
         Serial.println("Default localization method: odometry");
         break;
       }      
       case 4: 
       {
-        Serial.println("Change state to LAYOUT");
+        Serial.println("State changed to LAYOUT");
         Serial.println("Default localization method: odometry + IMU + RFID");
         break;
       }  
       case 5: 
       {
-        Serial.println("Change state to PID POSITION CONTROL");
+        Serial.println("State changed to PID POSITION CONTROL");
         Serial.println("Default localization method: odometry + IMU + RFID");
          break;
       } 
@@ -827,16 +852,32 @@ void Print_Serial_Localization(){
   switch(loc_method){
     case 0:
     {
-      Serial.print("\t\t\t\t\t");
-      Serial.print(Robot_Pose.odometryPose[0]);
       Serial.print("\t\t");
-      Serial.print(Robot_Pose.odometryPose[1]);
-      Serial.print("\t\t");
-      Serial.print(Robot_Pose.odometryPose[2]);
-      Serial.println("\t\t");
+      Serial.print(Robot_Pose.globalPose[0]);
+      Serial.print("\t");
+      Serial.print(Robot_Pose.globalPose[1]);
+      Serial.print("\t");
+      Serial.println(Robot_Pose.globalPose[2]);
       break;      
     }
     case 1:
+    {
+      Serial.print("\t\t");
+      Serial.print(Robot_Pose.odometryPose[0]);
+      Serial.print("\t");
+      Serial.print(Robot_Pose.odometryPose[1]);
+      Serial.print("\t");
+      Serial.print(Robot_Pose.odometryPose[2]);
+      Serial.print("\t\t\t");
+      Serial.print(Robot_Pose.IMU_angle);
+      Serial.print("\t\t\t");
+      Serial.print(Robot_Pose.globalPose[0]);
+      Serial.print("\t");
+      Serial.print(Robot_Pose.globalPose[1]);
+      Serial.print("\t");
+      Serial.println(Robot_Pose.globalPose[2]);
+      break;
+    }
     case 2:
     {
       break;
@@ -1120,7 +1161,7 @@ void localize_Robot(){
       Print_Serial_Localization();
     }
   }
-  // Include RFID readings
+  // Include RFID readings if loc_method==2
   if(loc_method==2){
     // Tag reading
     buffer_size = sizeof(buffer);
