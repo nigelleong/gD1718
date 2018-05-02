@@ -55,19 +55,19 @@
         tools:layout_editor_absoluteY="128dp" />
 
     <Button
-        android:id="@+id/btn_fold_wings"
+        android:id="@+id/btn_odometry_IMU"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/btn_down"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="51dp"
-        android:text="Fold wings" />
+        android:text="Localization: Odo+IMU" />
 
     <Button
         android:id="@+id/btn_fold_seat"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/btn_fold_wings"
+        android:layout_below="@+id/btn_odometry_IMU"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="20dp"
         android:text="Fold Seat" />

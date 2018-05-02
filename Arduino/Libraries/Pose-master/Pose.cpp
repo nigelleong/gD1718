@@ -66,5 +66,5 @@ void Pose::newPoseOdometry(float * w_is, Mecanum SRT_Mecanum, float delta_time) 
 void Pose::newAngleIMU(float yaw_prev, float yaw_is) {
 	float delta_angle;
 	delta_angle = yaw_is - yaw_prev;
-	IMU_angle = globalPose[2] + delta_angle*pi/180;
+	IMU_angle = globalPose[2] + delta_angle;
 }

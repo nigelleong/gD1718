@@ -7,32 +7,22 @@ package com.example.nigelleong.quantum;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 
 import android.bluetooth.BluetoothSocket;
-import android.content.Intent;
 import android.view.View;
 import android.widget.Button;
-import android.widget.SeekBar;
-import android.widget.TextView;
 import android.widget.Toast;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.os.AsyncTask;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.nio.charset.Charset;
 import java.util.UUID;
 
 public class robotControl extends AppCompatActivity implements View.OnClickListener {
 
-    Button btnUp, btnDown, btnLeft, btnRight, btnFoldSeat, btnFoldWings, btnBlinkLED;
+    Button btnUp, btnDown, btnLeft, btnRight, btnFoldSeat, btnOdoIMU, btnBlinkLED;
     Button btnPeak, btnOffPeak, btn1;
     String address = null;
     private ProgressDialog progress;
@@ -58,7 +48,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
         btnLeft = (Button)findViewById(R.id.btn_left);
         btnRight = (Button)findViewById(R.id.btn_right);
         btnFoldSeat = (Button)findViewById(R.id.btn_fold_seat);
-        btnFoldWings = (Button)findViewById(R.id.btn_fold_wings);
+        btnOdoIMU = (Button)findViewById(R.id.btn_odometry_IMU);
         btnBlinkLED = (Button)findViewById(R.id.btn_blink_led);
         btnPeak = (Button)findViewById(R.id.btn_peak);
         btn1 = (Button)findViewById(R.id.btn1);
@@ -70,7 +60,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
         btnLeft.setOnClickListener(this);
         btnRight.setOnClickListener(this);
         btnFoldSeat.setOnClickListener(this);
-        btnFoldWings.setOnClickListener(this);
+        btnOdoIMU.setOnClickListener(this);
         btnBlinkLED.setOnClickListener(this);
         btnPeak.setOnClickListener(this);
         btn1.setOnClickListener(this);
@@ -96,8 +86,8 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
             case R.id.btn_fold_seat:
                 robotFoldSeat();
                 break;
-            case R.id.btn_fold_wings:
-                robotFoldWings();
+            case R.id.btn_odometry_IMU:
+                localizationOdoIMU();
                 break;
             case R.id.btn_blink_led:
                 arduinoBlinkLED();
@@ -116,7 +106,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
     private void robotFoldSeat() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("S|||!".getBytes());
+                btSocket.getOutputStream().write("S|1||!".getBytes());
                 toastMsg("Command 'fold seat' sent");
             } catch (IOException e) {
                 toastMsg("Error");
@@ -125,11 +115,11 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
 //        toastMsg("Test command 'fold seat' sent");
     }
 
-    private void robotFoldWings() {
+    private void localizationOdoIMU() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("W|||!".getBytes());
-                toastMsg("Command 'fold wings' sent");
+                btSocket.getOutputStream().write("L|1||!".getBytes());
+                toastMsg("Command 'btnOdoIMU' sent");
             } catch (IOException e) {
                 toastMsg("Error");
             }
@@ -141,7 +131,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
         if (btSocket!=null) {
             try {
 //                btSocket.getOutputStream().write("M|2000|2000|90!".getBytes());
-                btSocket.getOutputStream().write("M|2000|2000|270!".getBytes());
+                btSocket.getOutputStream().write("M|100|0|0!".getBytes());
 //                btSocket.getOutputStream().write("s".getBytes(Charset.forName("UTF-8")));
 //                BufferedOutputStream buffStream = new BufferedOutputStream(btSocket.getOutputStream());
 //                buffStream.write("M".getBytes());
@@ -156,7 +146,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
     private void robotGoDown() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("M|2000|2000|270!".getBytes());
+                btSocket.getOutputStream().write("M|-100|0|0!".getBytes());
                 toastMsg("Command 'down' sent");
             } catch (IOException e) {
                 toastMsg("Error");
@@ -168,7 +158,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
     private void robotGoLeft() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("M|2000|2000|180!".getBytes());
+                btSocket.getOutputStream().write("M|0|100|0!".getBytes());
                 toastMsg("Command 'left' sent");
             } catch (IOException e) {
                 toastMsg("Error");
@@ -180,7 +170,7 @@ public class robotControl extends AppCompatActivity implements View.OnClickListe
     private void robotGoRight() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("M|2000|2000|0!".getBytes());
+                btSocket.getOutputStream().write("M|0|-100|0!".getBytes());
                 toastMsg("Command 'right' sent");
             } catch (IOException e) {
                 toastMsg("Error");

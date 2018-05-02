@@ -16,20 +16,20 @@ KalmanFus::KalmanFus() {
 	P[2][2] = 1;
 	
 	// Initialize covariance action matrix
-	Q[0][0] = 1;
+	Q[0][0] = 5;
 	Q[0][1] = 0;
 	Q[0][2] = 0;
 	
 	Q[1][0] = 0;
-	Q[1][1] = 1;
+	Q[1][1] = 5;
 	Q[1][2] = 0;
 	
 	Q[2][0] = 0;
 	Q[2][1] = 0;
-	Q[2][2] = 1;
+	Q[2][2] = 0.1;
 	
 	// Sensor uncertainty (IMU)
-	Cov_Sensor = 1;
+	Cov_Sensor = 0.1;
 	
 	// Sensor Model IMU
 	H_IMU[0] = 0;	
