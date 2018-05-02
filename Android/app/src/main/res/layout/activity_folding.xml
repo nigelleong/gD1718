@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <Button
+        android:id="@+id/btn_foldWings"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignEnd="@+id/btn_foldSeats"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="216dp"
+        android:text="Fold Wings" />
+
+    <Button
+        android:id="@+id/btn_foldSeats"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/btn_foldWings"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="66dp"
+        android:text="Fold Seats" />
+</RelativeLayout>

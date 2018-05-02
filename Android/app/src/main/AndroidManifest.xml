@@ -9,7 +9,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".DeviceList">
+        <activity android:name=".deviceListController">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -17,8 +17,23 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".robotControl"
-            android:label="robotControl">
+        <activity android:name=".standbyController"
+            android:label="standbyController">
+            <!--android:parentActivityName ="boundary.MainInterface">-->
+        </activity>
+
+        <activity android:name=".drivingController"
+            android:label="drivingController">
+            <!--android:parentActivityName ="boundary.MainInterface">-->
+        </activity>
+
+        <activity android:name=".foldingController"
+            android:label="foldingController">
+            <!--android:parentActivityName ="boundary.MainInterface">-->
+        </activity>
+
+        <activity android:name=".analogController"
+            android:label="analogController">
             <!--android:parentActivityName ="boundary.MainInterface">-->
         </activity>
 
