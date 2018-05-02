@@ -16,6 +16,8 @@
 #include <KalmanFus.h>
 #include <discreteKalman.h>
 
+
+
 // Pins for RFID Reader
 const int SDA_PIN = 53;
 const int RST_PIN = 5;
@@ -205,7 +207,7 @@ int state;
   *  case(1): odometry + IMU
   *  case(2): odometry + IMU + RFID
  */
- 
+
 void setup() {
   // Set states, layout and localization method
   change_state(0);
@@ -222,8 +224,6 @@ void setup() {
   // Set global initial pose:
   Robot_Pose.setglobalPose(0,0,0);
   Robot_Pose.setglobalPose_should(0,0,0);
-  // Set initial yaw angle from IMU
-  yaw_prev = Robot_Pose.globalPose[2];
 
   // Initialize IMU and RFID reader
   Init_IMU_RFID();
@@ -376,6 +376,8 @@ void loop() {
           mpu.resetFIFO();
           get_IMU_yaw();
           yaw_prev = ypr[0];
+          Serial.println(ypr[0]);
+          Serial.println(yaw_prev);
           // Initialize times
           time = millis();
           
@@ -559,10 +561,6 @@ void change_loc_method(int arg1){
       KalmanNFC.tag_det[1] = Robot_Pose.globalPose[1]; 
       //Get current yaw angle
       mpu.resetFIFO();
-      fifoCount = mpu.getFIFOCount();
-      while(fifoCount < packetSize){
-        fifoCount = mpu.getFIFOCount();
-      }
       // read a packet from FIFO of IMU
       get_IMU_yaw();
       yaw_prev = ypr[0];
@@ -789,6 +787,10 @@ void include_sign(){
 //////////////////////////////////////////////////////////////////////////////////////
 
 void get_IMU_yaw(){
+  fifoCount = mpu.getFIFOCount();
+  while(fifoCount < packetSize){
+    fifoCount = mpu.getFIFOCount();
+  }
   mpu.getFIFOBytes(fifoBuffer, packetSize);
   mpu.dmpGetQuaternion(&q, fifoBuffer);
   mpu.dmpGetGravity(&gravity, &q);
@@ -843,47 +845,7 @@ void Init_IMU_RFID(){
   mfrc522.PCD_Init(); //Initialize MFRC522 card
 }
 
-void Print_Serial_Localization(){
-  /*switch(loc_method){
-    case 0: {Serial.println("Pose odometry:   x   y   \theta");}
-    case 1: {Serial.println("Pose odometry:   x   y   \theta    Angle IMU:  \theta    Pose Kalman:    x   y   \theta");}
-    case 2: {Serial.println("Pose odometry:   x   y   \theta    Angle IMU:  \theta    Pose Kalman:    x   y   \theta    Pose Kalman RFID    x   y   \theta");}    
-  }*/
-  switch(loc_method){
-    case 0:
-    {
-      Serial.print("\t\t");
-      Serial.print(Robot_Pose.globalPose[0]);
-      Serial.print("\t");
-      Serial.print(Robot_Pose.globalPose[1]);
-      Serial.print("\t");
-      Serial.println(Robot_Pose.globalPose[2]);
-      break;      
-    }
-    case 1:
-    {
-      Serial.print("\t\t");
-      Serial.print(Robot_Pose.odometryPose[0]);
-      Serial.print("\t");
-      Serial.print(Robot_Pose.odometryPose[1]);
-      Serial.print("\t");
-      Serial.print(Robot_Pose.odometryPose[2]);
-      Serial.print("\t\t\t");
-      Serial.print(Robot_Pose.IMU_angle);
-      Serial.print("\t\t\t");
-      Serial.print(Robot_Pose.globalPose[0]);
-      Serial.print("\t");
-      Serial.print(Robot_Pose.globalPose[1]);
-      Serial.print("\t");
-      Serial.println(Robot_Pose.globalPose[2]);
-      break;
-    }
-    case 2:
-    {
-      break;
-    }
-  }
-}
+
 //////////////////////////////////////////////////////////////////////////////////////
 void do_Wings(int arg1, int arg2){ 
   if(arg1==2){
@@ -1122,7 +1084,6 @@ void foldSeats_R_down(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////// LOCALIZATION ALGORITHM /////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 //time_prev NEEDED for localization: Before starting localization always ste time_prev to millis!!
 void localize_Robot(){
   time_diff = millis() - time_prev;
@@ -1189,5 +1150,49 @@ void localize_Robot(){
       Robot_Pose.setglobalPose(KalmanNFC.new_State[0], KalmanNFC.new_State[1], KalmanNFC.new_State[2]);
     }
     mfrc522.PICC_HaltA(); 
+  }
+}
+
+
+
+void Print_Serial_Localization(){
+  /*switch(loc_method){
+    case 0: {Serial.println("Pose odometry:   x   y   \theta");}
+    case 1: {Serial.println("Pose odometry:   x   y   \theta    Angle IMU:  \theta    Pose Kalman:    x   y   \theta");}
+    case 2: {Serial.println("Pose odometry:   x   y   \theta    Angle IMU:  \theta    Pose Kalman:    x   y   \theta    Pose Kalman RFID    x   y   \theta");}    
+  }*/
+  switch(loc_method){
+    case 0:
+    {
+      Serial.print("\t\t");
+      Serial.print(Robot_Pose.globalPose[0]);
+      Serial.print("\t");
+      Serial.print(Robot_Pose.globalPose[1]);
+      Serial.print("\t");
+      Serial.println(Robot_Pose.globalPose[2]);
+      break;      
+    }
+    case 1:
+    {
+      Serial.print("\t\t");
+      Serial.print(Robot_Pose.odometryPose[0]);
+      Serial.print("\t");
+      Serial.print(Robot_Pose.odometryPose[1]);
+      Serial.print("\t");
+      Serial.print(Robot_Pose.odometryPose[2]);
+      Serial.print("\t\t\t");
+      Serial.print(Robot_Pose.IMU_angle);
+      Serial.print("\t\t\t");
+      Serial.print(Robot_Pose.globalPose[0]);
+      Serial.print("\t");
+      Serial.print(Robot_Pose.globalPose[1]);
+      Serial.print("\t");
+      Serial.println(Robot_Pose.globalPose[2]);
+      break;
+    }
+    case 2:
+    {
+      break;
+    }
   }
 }
