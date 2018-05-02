@@ -295,6 +295,8 @@ void setup() {
 }
 
 void loop() {
+  get_IMU_yaw();
+  Serial.println(ypr[0]);
   //Command Variables
   char  command_buffer[20]; // stores entire command
   char command = 'd'; //'d' = default
