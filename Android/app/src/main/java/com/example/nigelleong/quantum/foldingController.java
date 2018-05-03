@@ -3,6 +3,7 @@ package com.example.nigelleong.quantum;
 import android.bluetooth.BluetoothSocket;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -17,21 +18,20 @@ public class foldingController extends AppCompatActivity implements View.OnClick
 
     Button btnFoldSeats, btnFoldWings;
 
-    BluetoothSocket btSocket = null;
+    BluetoothSocket btSocket;
     BluetoothSocketHelper bluetoothSocketHelper;
-    public static String EXTRA_BT_SOCKET = "bluetooth_socket";
 
     byte[] buffer = new byte[1024];  // buffer store for the stream
     int bytes; // bytes returned from read()
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_folding);
 
-        bluetoothSocketHelper = (BluetoothSocketHelper) getIntent().getSerializableExtra(EXTRA_BT_SOCKET);
-        btSocket = (BluetoothSocket) bluetoothSocketHelper.getBluetoothSocket();
+        bluetoothSocketHelper = ((BluetoothSocketHelper) getApplicationContext());
+        btSocket = bluetoothSocketHelper.getBluetoothSocket();
+        Log.d("foldingController",btSocket.toString());
 
         btnFoldSeats = (Button)findViewById(R.id.btn_foldSeats);
         btnFoldWings = (Button)findViewById(R.id.btn_foldWings);
