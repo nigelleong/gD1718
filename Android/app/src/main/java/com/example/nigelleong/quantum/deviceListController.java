@@ -22,7 +22,7 @@ public class deviceListController extends AppCompatActivity implements View.OnCl
     Button btnPaired;
     ListView devicelist;
 
-    private BluetoothAdapter myBluetooth = null;
+    private BluetoothAdapter myBluetoothAdapter = null;
     private Set<BluetoothDevice> pairedDevices;
     public static String EXTRA_ADDRESS = "device_address";
 
@@ -35,13 +35,13 @@ public class deviceListController extends AppCompatActivity implements View.OnCl
         devicelist = (ListView)findViewById(R.id.listView);
 
         //if the device has bluetooth
-        myBluetooth = BluetoothAdapter.getDefaultAdapter();
+        myBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        if(myBluetooth == null) {
+        if(myBluetoothAdapter == null) {
             //Show a mensag. that the device has no bluetooth adapter
             Toast.makeText(getApplicationContext(), "Bluetooth Device Not Available", Toast.LENGTH_LONG).show();
             finish();
-        } else if(!myBluetooth.isEnabled()) {
+        } else if(!myBluetoothAdapter.isEnabled()) {
             //Ask to turn on bluetooth
             Intent turnBTon = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(turnBTon,1);
@@ -62,7 +62,7 @@ public class deviceListController extends AppCompatActivity implements View.OnCl
 
     private void pairedDevicesList()
     {
-        pairedDevices = myBluetooth.getBondedDevices();
+        pairedDevices = myBluetoothAdapter.getBondedDevices();
         ArrayList list = new ArrayList();
 
         if (pairedDevices.size()>0) {

@@ -9,6 +9,7 @@ import android.support.v7.app.AppCompatActivity;
 
 
 import android.bluetooth.BluetoothSocket;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -20,12 +21,10 @@ import java.util.UUID;
 
 public class drivingController extends AppCompatActivity implements View.OnClickListener {
 
-    Button btnUp, btnDown, btnLeft, btnRight;
-    Button btnPeak, btnOffPeak, btnMove;
+    Button btnUp, btnDown, btnLeft, btnRight, btnPeak, btnOffPeak, btnMove;
 
-    BluetoothSocket btSocket = null;
+    BluetoothSocket btSocket;
     BluetoothSocketHelper bluetoothSocketHelper;
-    public static String EXTRA_BT_SOCKET = "bluetooth_socket";
 
     byte[] buffer = new byte[1024];  // buffer store for the stream
     int bytes; // bytes returned from read()
@@ -36,8 +35,9 @@ public class drivingController extends AppCompatActivity implements View.OnClick
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_driving);
 
-        bluetoothSocketHelper = (BluetoothSocketHelper) getIntent().getSerializableExtra(EXTRA_BT_SOCKET);
-        btSocket = (BluetoothSocket) bluetoothSocketHelper.getBluetoothSocket();
+        bluetoothSocketHelper = ((BluetoothSocketHelper) getApplicationContext());
+        btSocket = bluetoothSocketHelper.getBluetoothSocket();
+        Log.d("drivingController",btSocket.toString());
 
         btnUp = (Button)findViewById(R.id.btn_up);
         btnDown = (Button)findViewById(R.id.btn_down);
