@@ -4,6 +4,7 @@ package com.example.nigelleong.quantum;
  * Created by nigelleong on 28/4/18.
  */
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
@@ -13,15 +14,12 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
-import android.app.ProgressDialog;
-import android.bluetooth.BluetoothAdapter;
 
 import java.io.IOException;
-import java.util.UUID;
 
 public class drivingController extends AppCompatActivity implements View.OnClickListener {
 
-    Button btnUp, btnDown, btnLeft, btnRight, btnPeak, btnOffPeak, btnMove;
+    Button btnUp, btnDown, btnLeft, btnRight, btnStandby, btnReset, btnOdo, btnOdoIMU, btnOdoIMUNFC;
 
     BluetoothSocket btSocket;
     BluetoothSocketHelper bluetoothSocketHelper;
@@ -43,17 +41,32 @@ public class drivingController extends AppCompatActivity implements View.OnClick
         btnDown = (Button)findViewById(R.id.btn_down);
         btnLeft = (Button)findViewById(R.id.btn_left);
         btnRight = (Button)findViewById(R.id.btn_right);
-        btnPeak = (Button)findViewById(R.id.btn_peak);
-        btnOffPeak = (Button)findViewById(R.id.btn_offpeak);
-        btnMove = (Button)findViewById(R.id.btn_move);
+        btnStandby = (Button)findViewById(R.id.btn_driving_standby);
+        btnReset = (Button)findViewById(R.id.btn_reset);
+        btnOdo = (Button)findViewById(R.id.btn_odo);
+        btnOdoIMU = (Button)findViewById(R.id.btn_odo_imu);
+        btnOdoIMUNFC = (Button)findViewById(R.id.btn_odo_imu_nfc);
+
 
         btnUp.setOnClickListener(this);
         btnDown.setOnClickListener(this);
         btnLeft.setOnClickListener(this);
         btnRight.setOnClickListener(this);
-        btnPeak.setOnClickListener(this);
-        btnOffPeak.setOnClickListener(this);
-        btnMove.setOnClickListener(this);
+        btnStandby.setOnClickListener(this);
+        btnReset.setOnClickListener(this);
+        btnOdo.setOnClickListener(this);
+        btnOdoIMU.setOnClickListener(this);
+        btnOdoIMUNFC.setOnClickListener(this);
+
+
+        //Switch to DRIVING (state = 1);
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("S|1|0|0!".getBytes());
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
     }
 
     @Override
@@ -71,36 +84,34 @@ public class drivingController extends AppCompatActivity implements View.OnClick
             case R.id.btn_right:
                 robotGoRight();
                 break;
-            case R.id.btn_peak:
-                configPeak();
+            case R.id.btn_driving_standby:
+                Intent drivingIntent = new Intent(drivingController.this, standbyController.class);
+                startActivity(drivingIntent);
                 break;
-            case R.id.btn_offpeak:
-                configOffPeak();
+            case R.id.btn_reset:
+                resetPose();
                 break;
-            case R.id.btn_move:
-                move();
+            case R.id.btn_odo:
+                setToOdo();
+                break;
+            case R.id.btn_odo_imu:
+                setToOdoIMU();
+                break;
+            case R.id.btn_odo_imu_nfc:
+                setToOdoIMUNFC();
                 break;
             default:
                 break;
         }
     }
 
-    private void move() {
-        if (btSocket!=null) {
-            try {
-//                btSocket.getOutputStream().write("M|2000|2000|90!".getBytes());
-                btSocket.getOutputStream().write("M|2000|2000|270!".getBytes());
-            } catch (IOException e) {
-                toastMsg("Error");
-            }
-        }
-    }
 
     private void robotGoUp() {
         if (btSocket!=null) {
             try {
 //                btSocket.getOutputStream().write("M|2000|2000|90!".getBytes());
-                btSocket.getOutputStream().write("M|2000|2000|270!".getBytes());
+                btSocket.getOutputStream().write("M|100|0|0!".getBytes());
+                toastMsg("Command 'up' sent");
             } catch (IOException e) {
                 toastMsg("Error");
             }
@@ -110,7 +121,7 @@ public class drivingController extends AppCompatActivity implements View.OnClick
     private void robotGoDown() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("M|2000|2000|270!".getBytes());
+                btSocket.getOutputStream().write("M|-100|0|0!".getBytes());
                 toastMsg("Command 'down' sent");
             } catch (IOException e) {
                 toastMsg("Error");
@@ -121,7 +132,7 @@ public class drivingController extends AppCompatActivity implements View.OnClick
     private void robotGoLeft() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("M|2000|2000|180!".getBytes());
+                btSocket.getOutputStream().write("M|0|100|0!".getBytes());
                 toastMsg("Command 'left' sent");
             } catch (IOException e) {
                 toastMsg("Error");
@@ -132,7 +143,7 @@ public class drivingController extends AppCompatActivity implements View.OnClick
     private void robotGoRight() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("M|2000|2000|0!".getBytes());
+                btSocket.getOutputStream().write("M|0|-100|0!".getBytes());
                 toastMsg("Command 'right' sent");
             } catch (IOException e) {
                 toastMsg("Error");
@@ -140,39 +151,50 @@ public class drivingController extends AppCompatActivity implements View.OnClick
         }
     }
 
-    private void configPeak() {
+    private void resetPose() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("W|200|200|90!".getBytes());
-                bytes = btSocket.getInputStream().read(buffer);
-                btSocket.getOutputStream().write("W|200|200|180!".getBytes());
-                bytes = btSocket.getInputStream().read(buffer);
-                btSocket.getOutputStream().write("W|200|200|270!".getBytes());
-                bytes = btSocket.getInputStream().read(buffer);
-                btSocket.getOutputStream().write("W|200|200|0!".getBytes());
-                toastMsg("Config Peak completed");
+                btSocket.getOutputStream().write("P|0|0|0!".getBytes());
+                toastMsg("Pose set to (0,0,0)");
             } catch (IOException e) {
                 toastMsg("Error");
             }
         }
     }
 
-    private void configOffPeak() {
+    private void setToOdo() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("W|200|200|90!".getBytes());
-                bytes = btSocket.getInputStream().read(buffer);
-                btSocket.getOutputStream().write("W|200|200|180!".getBytes());
-                bytes = btSocket.getInputStream().read(buffer);
-                btSocket.getOutputStream().write("W|200|200|270!".getBytes());
-                bytes = btSocket.getInputStream().read(buffer);
-                btSocket.getOutputStream().write("W|200|200|0!".getBytes());
-                toastMsg("Config Peak completed");
+                btSocket.getOutputStream().write("L|0|0|0!".getBytes());
+                toastMsg("Localization method: odometry");
             } catch (IOException e) {
                 toastMsg("Error");
             }
         }
     }
+
+    private void setToOdoIMU() {
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("L|1|0|0!".getBytes());
+                toastMsg("Localization method: Odometry + IMU");
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+    }
+
+    private void setToOdoIMUNFC() {
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("L|2|0|0!".getBytes());
+                toastMsg("Localization method: Odometry + IMU + NFC");
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+    }
+
 
     private void toastMsg(String s) {
         Toast.makeText(getApplicationContext(),s,Toast.LENGTH_LONG).show();

@@ -346,6 +346,12 @@ void loop() {
           change_loc_method(arg1);
           break;
         }
+		case 'P': // Set global pose according to arguments
+        {
+          Robot_Pose.setglobalPose(arg1,arg2,arg3);
+          print_globalPose();
+          break;
+        }
         case 'M': //Moving with velocities defined by arg1-3 for a certain time
         {
           if(layout!=0){
@@ -396,12 +402,7 @@ void loop() {
           DC_STOP = allWheelsSTOP();
           break;
         }
-        case 'P': // Set global pose according to arguments
-        {
-          Robot_Pose.setglobalPose(arg1,arg2,arg3);
-          print_globalPose();
-          break;
-        }
+        
         default: {break;} 
       }
       break;      

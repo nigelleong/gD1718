@@ -24,7 +24,7 @@ import java.util.UUID;
 
 public class standbyController extends AppCompatActivity implements View.OnClickListener {
 
-    Button btnDriving, btnFolding, btnAnalog;
+    Button btnDriving, btnFolding, btnAnalog, btnLayouts, btnPID;
     String address = null;
     private ProgressDialog progress;
     BluetoothAdapter myBluetooth = null;
@@ -55,12 +55,25 @@ public class standbyController extends AppCompatActivity implements View.OnClick
         btnDriving = (Button)findViewById(R.id.btn_driving);
         btnFolding = (Button)findViewById(R.id.btn_folding);
         btnAnalog = (Button)findViewById(R.id.btn_analog);
+        btnLayouts = (Button)findViewById(R.id.btn_layouts);
+        btnLayouts = (Button)findViewById(R.id.btn_PID);
 
         new ConnectBT().execute();
 
         btnDriving.setOnClickListener(this);
         btnFolding.setOnClickListener(this);
         btnAnalog.setOnClickListener(this);
+        btnLayouts.setOnClickListener(this);
+        btnLayouts.setOnClickListener(this);
+
+        //Switch to STANDBY (state = 0);
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("S|0|0|0!".getBytes());
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
     }
 
     @Override
@@ -77,6 +90,14 @@ public class standbyController extends AppCompatActivity implements View.OnClick
             case R.id.btn_analog:
                 Intent analogIntent = new Intent(standbyController.this, analogController.class);
                 startActivity(analogIntent);
+                break;
+            case R.id.btn_layouts:
+                Intent layoutsIntent = new Intent(standbyController.this, layoutController.class);
+                startActivity(layoutsIntent);
+                break;
+            case R.id.btn_PID:
+                Intent PIDIntent = new Intent(standbyController.this, PIDController.class);
+                startActivity(PIDIntent);
                 break;
             default:
                 break;

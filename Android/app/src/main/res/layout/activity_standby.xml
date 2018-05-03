@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="74dp"
+        android:layout_marginTop="49dp"
         android:text="Driving"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -22,9 +22,9 @@
         android:id="@+id/btn_folding"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignStart="@+id/btn_driving"
-        android:layout_below="@+id/btn_driving"
-        android:layout_marginTop="42dp"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="130dp"
         android:text="Folding"
         tools:layout_editor_absoluteX="32dp"
         tools:layout_editor_absoluteY="128dp" />
@@ -33,12 +33,30 @@
         android:id="@+id/btn_analog"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignStart="@+id/btn_folding"
-        android:layout_below="@+id/btn_folding"
-        android:layout_marginTop="44dp"
-        android:text="Analog"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="207dp"
+        android:text="Remote Control"
         tools:layout_editor_absoluteX="261dp"
         tools:layout_editor_absoluteY="128dp" />
+
+    <Button
+        android:id="@+id/btn_layouts"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="176dp"
+        android:text="Layouts" />
+
+    <Button
+        android:id="@+id/btn_PID"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="84dp"
+        android:text="PID Position Control" />
 
 
 </RelativeLayout>

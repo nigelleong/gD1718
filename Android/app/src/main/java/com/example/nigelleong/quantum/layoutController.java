@@ -17,7 +17,7 @@ import android.widget.Toast;
 
 import java.io.IOException;
 
-public class analogController extends AppCompatActivity implements View.OnClickListener {
+public class layoutController extends AppCompatActivity implements View.OnClickListener {
 
     Button btnStandby;
 
@@ -31,22 +31,22 @@ public class analogController extends AppCompatActivity implements View.OnClickL
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_analog);
+        setContentView(R.layout.activity_layout);
 
         bluetoothSocketHelper = ((BluetoothSocketHelper) getApplicationContext());
         btSocket = bluetoothSocketHelper.getBluetoothSocket();
-        Log.d("analogController",btSocket.toString());
+        Log.d("layoutController",btSocket.toString());
 
-        btnStandby = (Button)findViewById(R.id.btn_analog_standby);
+        btnStandby = (Button)findViewById(R.id.btn_layout_standby);
 
 
         btnStandby.setOnClickListener(this);
 
 
-        //Switch to Analog remote control (state = 3);
+        //Switch to LAYOUTS (state = 4);
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("S|3|0|0!".getBytes());
+                btSocket.getOutputStream().write("S|4|0|0!".getBytes());
             } catch (IOException e) {
                 toastMsg("Error");
             }
@@ -56,8 +56,8 @@ public class analogController extends AppCompatActivity implements View.OnClickL
     @Override
     public void onClick(View view) {
         switch(view.getId()) {
-            case R.id.btn_analog_standby:
-                Intent drivingIntent = new Intent(analogController.this, standbyController.class);
+            case R.id.btn_layout_standby:
+                Intent drivingIntent = new Intent(layoutController.this, standbyController.class);
                 startActivity(drivingIntent);
                 break;
             default:

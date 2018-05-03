@@ -5,65 +5,83 @@
     android:layout_height="match_parent">
 
     <Button
-        android:id="@+id/btn_move"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignStart="@+id/btn_down"
-        android:text="Move" />
-
-    <Button
-        android:id="@+id/btn_peak"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignStart="@+id/btn_move"
-        android:layout_below="@+id/btn_move"
-        android:layout_marginTop="29dp"
-        android:text="Peak" />
-
-    <Button
-        android:id="@+id/btn_offpeak"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignStart="@+id/btn_peak"
-        android:layout_below="@+id/btn_peak"
-        android:layout_marginTop="33dp"
-        android:text="Off Peak" />
-
-    <Button
         android:id="@+id/btn_up"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignStart="@+id/btn_offpeak"
-        android:layout_below="@+id/btn_offpeak"
-        android:layout_marginTop="36dp"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="55dp"
         android:text="Up" />
 
     <Button
         android:id="@+id/btn_left"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignBaseline="@+id/btn_down"
-        android:layout_alignBottom="@+id/btn_down"
-        android:layout_marginEnd="22dp"
-        android:layout_toStartOf="@+id/btn_down"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/btn_up"
+        android:layout_marginStart="39dp"
         android:text="Left" />
 
     <Button
         android:id="@+id/btn_down"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/btn_up"
+        android:layout_below="@+id/btn_left"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="39dp"
         android:text="Down" />
 
     <Button
         android:id="@+id/btn_right"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignBaseline="@+id/btn_down"
-        android:layout_alignBottom="@+id/btn_down"
-        android:layout_marginStart="24dp"
-        android:layout_toEndOf="@+id/btn_down"
-        android:text="Right" />
+        android:layout_alignParentEnd="true"
+        android:layout_below="@+id/btn_up"
+        android:layout_marginEnd="40dp"
+        android:text="RIGHT" />
+
+    <Button
+        android:id="@+id/btn_driving_standby"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginBottom="198dp"
+        android:layout_marginStart="46dp"
+        android:text="STANDBY" />
+
+    <Button
+        android:id="@+id/btn_odo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignTop="@+id/btn_driving_standby"
+        android:layout_marginEnd="97dp"
+        android:text="Odometry" />
+
+    <Button
+        android:id="@+id/btn_odo_imu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignStart="@+id/btn_odo"
+        android:layout_marginBottom="125dp"
+        android:text="Odometry + imu" />
+
+    <Button
+        android:id="@+id/btn_odo_imu_nfc"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignStart="@+id/btn_odo"
+        android:layout_marginBottom="47dp"
+        android:text="Odometry + IMU + NFC" />
+
+    <Button
+        android:id="@+id/btn_reset"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/btn_odo_imu"
+        android:layout_toStartOf="@+id/btn_up"
+        android:text="Reset Pose" />
+
 </RelativeLayout>
