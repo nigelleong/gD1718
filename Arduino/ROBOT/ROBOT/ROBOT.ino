@@ -160,17 +160,23 @@ PID PID_DC3(&w_is[2], &PID_Out_DC[2], &w_should[2], Kp_DC, Ki_DC, Kd_DC, DIRECT)
 PID PID_DC4(&w_is[3], &PID_Out_DC[3], &w_should[3], Kp_DC, Ki_DC, Kd_DC, DIRECT);
 
 // Create PID for position Control
-double PID_Out_Pose[3];
 double Kp_Pose_xy = 2.5, Ki_Pose_xy = 0.5, Kd_Pose_xy = 0;
-PID PID_x(&Robot_Pose.globalPose[0], &PID_Out_Pose[0], &Robot_Pose.globalPose_should[0], Kp_Pose_xy, Ki_Pose_xy, Kd_Pose_xy, DIRECT);
-PID PID_y(&Robot_Pose.globalPose[1], &PID_Out_Pose[1], &Robot_Pose.globalPose_should[1], Kp_DC, Ki_DC, Kd_DC, DIRECT);
+PID PID_x(&Robot_Pose.globalPose[0], &v[0], &Robot_Pose.globalPose_should[0], Kp_Pose_xy, Ki_Pose_xy, Kd_Pose_xy, DIRECT);
+PID PID_y(&Robot_Pose.globalPose[1], &v[1], &Robot_Pose.globalPose_should[1], Kp_DC, Ki_DC, Kd_DC, DIRECT);
 double Kp_Pose_th = 1, Ki_Pose_th = 1, Kd_Pose_th = 0;
-PID PID_theta(&Robot_Pose.globalPose[2], &PID_Out_Pose[2], &Robot_Pose.globalPose_should[2], Kp_DC, Ki_DC, Kd_DC, DIRECT);
-// Set Output limits:
+PID PID_theta(&Robot_Pose.globalPose[2], &v[2], &Robot_Pose.globalPose_should[2], Kp_DC, Ki_DC, Kd_DC, DIRECT);
+
 // Maximal Speeds in mm/s and rad/s
 const double v_max_x = 150;
 const double v_max_y = 150;
-const double w_max = 1;
+const double v_max_theta = 1;
+// Distances/angle at which PID takes over
+const double PID_dis_x = 100;
+const double PID_dis_y = 100;
+const double PID_dis_theta = 1;
+// Allowed Pose Error:
+const float Pose_error_xy = 5;
+const float Pose_error_theta = 0.04;
 
 bool print_to_COM = true; //Print data da serial port (computer)
 
@@ -289,7 +295,7 @@ void setup() {
   PID_theta.SetSampleTime(PID_sample_time);
   PID_x.SetOutputLimit(v_max_x, v_max_x);
   PID_y.SetOutputLimit(-v_max_y, v_max_y);
-  PID_theta.SetOutputLimit(-w_max, w_max);
+  PID_theta.SetOutputLimit(-v_max_theta, v_max_theta);
 }
 
 void loop() {  
@@ -532,9 +538,74 @@ void loop() {
           Robot_Pose.globalPose_should[0] = arg1;
           Robot_Pose.globalPose_should[1] = arg2;
           Robot_Pose.globalPose_should[2] = arg3;
+          if(print_to_COM){
+            Serial.print("Heading to x: ");
+            Serial.print(arg1);
+            Serial.print("\t y: ");
+            Serial.print(arg2);
+            Serial.print("\t theta: ");
+            Serial.println(arg3);
+          }
           
+          // Print header for localization results
+          if(print_to_COM){
+            switch(loc_method){
+              case 0: {Serial.println("Pose odometry:   x \t y \t theta"); break;}
+              case 1: {Serial.println("Pose odometry:   x \t y \t theta    Angle IMU:   theta    Pose Kalman:    x \t y \t theta"); break;}
+              case 2: {Serial.println("Pose odometry:   x \t y \t theta    Angle IMU:   theta    Pose Kalman:    x \t y \t theta    Pose Kalman RFID    x \t y \t theta"); break;}    
+            }
+          }
+          // Reset Encoders and Reset FiFo buffer of IMU and get current yaw angle from IMU
+          getEnconderSpeeds(50);
+          mpu.resetFIFO();
+          get_IMU_yaw();
+          yaw_prev = ypr[0];
+
+          // Calculated distance to go in local system         
           Robot_Pose.calctoGo_local();
-          //Robot_Pose.toGo_local[0];
+
+          while(abs(Robot_Pose.toGo_local[0])>Pose_error_xy || abs(Robot_Pose.toGo_local[1])>Pose_error_xy || abs(Robot_Pose.toGo_local[2])>Pose_error_theta){
+            if(abs(Robot_Pose.toGo_local[0])<PID_dis_x){
+              PID_x.Compute();
+              
+            }
+            else{
+              v[0] = sgn(Robot_Pose.toGo_local[0])*v_max_x;
+            }
+            if(abs(Robot_Pose.toGo_local[1])<PID_dis_y){
+              PID_y.Compute();
+              
+            }
+            else{
+              v[1] = sgn(Robot_Pose.toGo_local[1])*v_max_y;
+            }
+            if(abs(Robot_Pose.toGo_local[2])<PID_dis_theta){
+              PID_theta.Compute();
+              
+            }
+            else{
+              v[2] = sgn(Robot_Pose.toGo_local[2])*v_max_theta;
+            }
+            
+            if(v[0]==0&&v[1]==0&&v[2]==0){
+              DC_STOP = allWheelsSTOP();
+            }
+            // Calculate desired wheels speeds WITH SIGN
+            SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
+            // Desired wheel speeds WITHOUT SIGN (needed for PID controller
+            SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
+            
+            localize_Robot();
+            if(!DC_STOP){
+              run_DC();
+            }
+            Robot_Pose.calctoGo_local();
+          }
+          DC_STOP = allWheelsSTOP();
+          if(print_to_COM){
+            Serial.println("Position reached!!");
+          }
+        
           
           break;
         }
@@ -562,7 +633,7 @@ void read_BT_command(char* command_buffer, char *command, int *arg1, int *arg2, 
   int input;
   int i = 0;
   while(1){
-      /* This is just to determine the standard deviation of the IMU
+     /* //This is just to determine the standard deviation of the IMU
       get_IMU_yaw();
       Serial.print(ypr[0],DEC);
       Serial.print("\t\t\t");
@@ -636,6 +707,7 @@ void read_BT_command(char* command_buffer, char *command, int *arg1, int *arg2, 
     Serial.print("arg3: ");
     Serial.println(*arg3);   
   }
+  memset(command_buffer, 0, sizeof(command_buffer));
 } 
 
 ///////////////////////////////////////////////////
@@ -797,6 +869,11 @@ void doEncoder_4() {
   Encoder_4.update();
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
+static inline int8_t sgn(float val){
+  if (val<0) return -1;
+  return 1;
+}
 //////////////////////////////////////////////////////////////////////////////////////
 // calculate wheel speeds form encoders
 void getEnconderSpeeds(int time_diff){
