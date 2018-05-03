@@ -3,7 +3,7 @@
 
 discreteKalman::discreteKalman() {
 	// Radius of detection area around tags
-	Radius = 30;
+	Radius = 33.08119275;
 	
 	// COvariance for area around tags
 	Q[0][0] = sq(Radius)/4;
@@ -25,12 +25,12 @@ discreteKalman::discreteKalman() {
 	P[2][1] = 0;
 	P[2][2] = 1;
 	
-	// Covariance tag misplacement
-	R[0][0] = 1;
+	// Covariance tag misplacement: Assuming a misplacement of 5mm
+	R[0][0] = 25;
 	R[0][1] = 0;
 	
 	R[1][0] = 0;
-	R[1][1] = 1;
+	R[1][1] = 25;
 	
 	// Sensor Model
 	H[0][0] = 1;

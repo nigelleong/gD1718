@@ -15,7 +15,7 @@
 #endif
 #include <KalmanFus.h>
 #include <discreteKalman.h>
-
+const float pi = 3.14159265359;
 
 
 // Pins for RFID Reader
@@ -71,11 +71,6 @@ float R = 30;
 float area_x = 1250;
 float area_y = 1250;
 float safe_dis = 325; // safety distance to the edge of the stage
-
-// Maximal Speeds in mm/s and rad/s
-const float v_max_x = 150;
-const float v_max_y = 150;
-const float w_max = 1;
 
 // translation of gearbox
 const float translation = 74.831;
@@ -156,10 +151,6 @@ double w_should[4]; // Desired rotational wheel speeds WITHOUT SIGN
 double w_is[4]; // measured rotational wheel speeds WITHOUT SIGN
 double w_is_sign[4]; // measured rotational wheel speeds WITH SIGN
 
-// global speeds and positions
-double dist_Pose[3]; // Distance between pose_should and global Pose
-double v_global[3]; // desired speed in global frame
-
 // Create PID for DC motors // Output limit is 0-255 by default
 double PID_Out_DC[4]; //Output of PID controler
 double Kp_DC = 10, Ki_DC = 90, Kd_DC = 0;
@@ -169,14 +160,17 @@ PID PID_DC3(&w_is[2], &PID_Out_DC[2], &w_should[2], Kp_DC, Ki_DC, Kd_DC, DIRECT)
 PID PID_DC4(&w_is[3], &PID_Out_DC[3], &w_should[3], Kp_DC, Ki_DC, Kd_DC, DIRECT);
 
 // Create PID for position Control
-/*double Kp_Pose = 1, Ki_Pose = 1, Kd_Pose = 0, Kf_Pose = 0;
-PID PID_x(
-PID PID_y(
-PID PID_theta(
+double PID_Out_Pose[3];
+double Kp_Pose_xy = 2.5, Ki_Pose_xy = 0.5, Kd_Pose_xy = 0;
+PID PID_x(&Robot_Pose.globalPose[0], &PID_Out_Pose[0], &Robot_Pose.globalPose_should[0], Kp_Pose_xy, Ki_Pose_xy, Kd_Pose_xy, DIRECT);
+PID PID_y(&Robot_Pose.globalPose[1], &PID_Out_Pose[1], &Robot_Pose.globalPose_should[1], Kp_DC, Ki_DC, Kd_DC, DIRECT);
+double Kp_Pose_th = 1, Ki_Pose_th = 1, Kd_Pose_th = 0;
+PID PID_theta(&Robot_Pose.globalPose[2], &PID_Out_Pose[2], &Robot_Pose.globalPose_should[2], Kp_DC, Ki_DC, Kd_DC, DIRECT);
 // Set Output limits:
-PID_x.SetOutputLimits(-v_max_x, v_max_x);
-PID_y.SetOutputLimits(-v_max_y, v_max_y);
-PID_theta.SetOutputLimits(-w_max, w_max);*/
+// Maximal Speeds in mm/s and rad/s
+const double v_max_x = 150;
+const double v_max_y = 150;
+const double w_max = 1;
 
 bool print_to_COM = true; //Print data da serial port (computer)
 
@@ -186,7 +180,7 @@ int state;
  *  case(0): standby -> no mode selected, no movement, INITIAL Pose can be set
  *  case(1): driving -> Robot expects commands to move with velocity vector for a certain time --> int drive_time
  *  case(2): folding -> Robot expects commands to fold
- *  case(3): not implemented: analog remote controll
+ *  case(3): analog remote controll
  *  case(4): not implemented: predefined configurations
  *  case(5): not implemented: PID position control
  */
@@ -208,6 +202,7 @@ int state;
   *  case(2): odometry + IMU + RFID
  */
 
+#include <Folding_Functions.h>
 void setup() {
   // Set states, layout and localization method
   change_state(0);
@@ -286,17 +281,18 @@ void setup() {
   PID_DC4.SetMode(AUTOMATIC);
   PID_DC4.SetSampleTime(PID_sample_time);
 
-/*  PID_x.SetMode(AUTOMATIC);
+  PID_x.SetMode(AUTOMATIC);
   PID_x.SetSampleTime(PID_sample_time);
   PID_y.SetMode(AUTOMATIC);
   PID_y.SetSampleTime(PID_sample_time);
   PID_theta.SetMode(AUTOMATIC);
-  PID_theta.SetSampleTime(PID_sample_time);*/
+  PID_theta.SetSampleTime(PID_sample_time);
+  PID_x.SetOutputLimit(v_max_x, v_max_x);
+  PID_y.SetOutputLimit(-v_max_y, v_max_y);
+  PID_theta.SetOutputLimit(-w_max, w_max);
 }
 
-void loop() {
-  get_IMU_yaw();
-  Serial.println(ypr[0]);
+void loop() {  
   //Command Variables
   char  command_buffer[20]; // stores entire command
   char command = 'd'; //'d' = default
@@ -378,8 +374,6 @@ void loop() {
           mpu.resetFIFO();
           get_IMU_yaw();
           yaw_prev = ypr[0];
-          Serial.println(ypr[0]);
-          Serial.println(yaw_prev);
           // Initialize times
           time = millis();
           
@@ -439,7 +433,114 @@ void loop() {
     ////////////////////////////////////////////////////////////
     case '3':
     {
-      
+      // Waiting for commands
+      read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);
+      //First character of command
+      switch(command){
+        case 'S': //'S'= switch -> switch to state defined in arg1 (see above)
+        {
+          change_state(arg1);
+          break;
+        }
+        case 'L': // Change localization method (first argument)
+        {
+          change_loc_method(arg1);
+          break;
+        }
+        case 'P': // Set global pose according to arguments
+        {
+          Robot_Pose.setglobalPose(arg1,arg2,arg3);
+          print_globalPose();
+          break;
+        }
+        case 'M': //Moving with velocities defined by arg1-3 for a certain time
+        {
+          if(layout!=0){
+            if(print_to_COM){
+              Serial.println("Bevore moving change into privacy/moving configuration!!");
+              break;
+            }
+          }
+          // Print header for localization results
+          if(print_to_COM){
+            switch(loc_method){
+              case 0: {Serial.println("Pose odometry:   x \t y \t theta"); break;}
+              case 1: {Serial.println("Pose odometry:   x \t y \t theta    Angle IMU:   theta    Pose Kalman:    x \t y \t theta"); break;}
+              case 2: {Serial.println("Pose odometry:   x \t y \t theta    Angle IMU:   theta    Pose Kalman:    x \t y \t theta    Pose Kalman RFID    x \t y \t theta"); break;}    
+            }
+          }
+           // Reset Encoders and Reset FiFo buffer of IMU and get current yaw angle from IMU
+          getEnconderSpeeds(50);
+          mpu.resetFIFO();
+          get_IMU_yaw();
+          yaw_prev = ypr[0];
+          //time_prev NEEDED for localization: Before starting localization always ste time_prev to millis!!
+          time_prev = millis();
+
+          while(command!='M'){
+            read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);
+            // Calculations of wheel speeds
+            v[0] = arg1;
+            v[1] = arg2;
+            v[2] = arg3;
+            if(v[0]==0&&v[1]==0&&v[2]==0){
+              DC_STOP = allWheelsSTOP();
+            }
+            // Calculate desired wheels speeds WITH SIGN
+            SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
+            // Desired wheel speeds WITHOUT SIGN (needed for PID controller
+            SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);            
+            localize_Robot();          
+            if(!DC_STOP){// Compute PID results for DC motors and run DC motors
+              run_DC();
+            }          
+          }          
+          break;
+        }
+        default: {break;} 
+      }
+      break;
+    }
+    ////////////////////////////////////////////////////////////
+    // PID POSITION CONTROL ////////////////////////////////////
+    ////////////////////////////////////////////////////////////
+    case '5':
+    {
+      // Waiting for commands
+      read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);
+      //First character of command
+      switch(command){
+        case 'S': //'S'= switch -> switch to state defined in arg1 (see above)
+        {
+          change_state(arg1);
+          break;
+        }
+        case 'L': // Change localization method (first argument)
+        {
+          change_loc_method(arg1);
+          break;
+        }
+        case 'P': // Set global pose according to arguments
+        {
+          Robot_Pose.setglobalPose(arg1,arg2,arg3);
+          print_globalPose();
+          break;
+        }
+        case 'T': //'T': target position
+        {
+          // Arguments contain the desired position
+          Robot_Pose.globalPose_should[0] = arg1;
+          Robot_Pose.globalPose_should[1] = arg2;
+          Robot_Pose.globalPose_should[2] = arg3;
+          
+          Robot_Pose.calctoGo_local();
+          //Robot_Pose.toGo_local[0];
+          
+          break;
+        }
+        default: {break;} 
+      }
+      break;
     }
     // Default case
     default: 
@@ -461,6 +562,11 @@ void read_BT_command(char* command_buffer, char *command, int *arg1, int *arg2, 
   int input;
   int i = 0;
   while(1){
+      /* This is just to determine the standard deviation of the IMU
+      get_IMU_yaw();
+      Serial.print(ypr[0],DEC);
+      Serial.print("\t\t\t");
+      Serial.println(millis());*/
     if ( BT.available() ) {
         input = (BT.read());
         command_buffer[i] = input;
@@ -797,6 +903,10 @@ void get_IMU_yaw(){
   mpu.dmpGetQuaternion(&q, fifoBuffer);
   mpu.dmpGetGravity(&gravity, &q);
   mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+  if(ypr[0]<0){
+    ypr[0] += 2*pi ;
+  }
+  ypr[0] = 2*pi - ypr[0];
   mpu.resetFIFO();
 }
 //////////////////////////////////////////////////////////////////////////////////////
@@ -815,10 +925,10 @@ void Init_IMU_RFID(){
   devStatus = mpu.dmpInitialize();
 
     // supply your own gyro offsets here, scaled for min sensitivity
-  mpu.setXGyroOffset(99);
-  mpu.setYGyroOffset(-31); //-30
-  mpu.setZGyroOffset(40); //41
-  mpu.setZAccelOffset(1483); // 1484
+  mpu.setXGyroOffset(101); //102
+  mpu.setYGyroOffset(-28); //-29
+  mpu.setZGyroOffset(39); //39
+  mpu.setZAccelOffset(1509); // 1510
 
   // make sure it worked (returns 0 if so)
   if (devStatus == 0) {
@@ -848,240 +958,6 @@ void Init_IMU_RFID(){
 }
 
 
-//////////////////////////////////////////////////////////////////////////////////////
-void do_Wings(int arg1, int arg2){ 
-  if(arg1==2){
-    if(arg2==1){
-      openWings();
-    }
-    else if(arg2==0){
-      closeWings();
-    }      
-  }
-  else if(arg1==1){
-    if(arg2==1){
-      openWing_L();
-    }
-    else if(arg2==0){
-      closeWing_L();
-    }
-  }
-  else if(arg1==0){
-    if(arg2==1){
-      openWing_R();
-    }
-    else if(arg2==0){
-      closeWing_R();
-    }
-  }
-}
-
-void do_Seats(int arg1, int arg2){
-  if(arg1==3){
-    if(arg2==1){
-      foldSeats_up();
-    }
-    else if(arg2==0){
-      foldSeats_down();
-    }      
-  }
-  else if(arg1==2){
-    if(arg2==1){
-      foldSeats_L_up();
-    }
-    else if(arg2==0){
-      foldSeats_L_down();
-    }
-  }
-  else if(arg1==1){
-    if(arg2==1){
-      foldSeats_M_up();
-    }
-    else if(arg2==0){
-      foldSeats_M_down();
-    }
-  }
-  else if(arg1==0){
-    if(arg2==1){
-      foldSeats_R_up();
-    }
-    else if(arg2==0){
-      foldSeats_R_down();
-    }
-  }
-}
-
-// Folding Functions for Wings
-void openWings(){
-  digitalWrite(Wing_R_dir, HIGH);
-  digitalWrite(Wing_L_dir, HIGH);
-  for(int i=0; i<steps_Wings ; i++){
-    digitalWrite(Wing_R_step, HIGH);
-    digitalWrite(Wing_L_step, HIGH);
-    delayMicroseconds(stepTime_Wings);
-    digitalWrite(Wing_R_step, LOW);
-    digitalWrite(Wing_L_step, LOW);
-    delay(stepDelay_Wings);
-  } 
-}
-void openWing_R(){
-  digitalWrite(Wing_R_dir, HIGH);
-  for(int i=0; i<steps_Wings ; i++){
-    digitalWrite(Wing_R_step, HIGH);
-    delayMicroseconds(stepTime_Wings);
-    digitalWrite(Wing_R_step, LOW);
-    delay(stepDelay_Wings);
-  } 
-}
-void openWing_L(){
-  digitalWrite(Wing_L_dir, HIGH);
-  for(int i=0; i<steps_Wings ; i++){
-    digitalWrite(Wing_L_step, HIGH);
-    delayMicroseconds(stepTime_Wings);
-    digitalWrite(Wing_L_step, LOW);
-    delay(stepDelay_Wings);
-  } 
-}
-void closeWings(){
-  digitalWrite(Wing_R_dir, LOW);
-  digitalWrite(Wing_L_dir, LOW);
-  for(int i=0; i<steps_Wings ; i++){
-    digitalWrite(Wing_R_step, HIGH);
-    digitalWrite(Wing_L_step, HIGH);
-    delayMicroseconds(stepTime_Wings);
-    digitalWrite(Wing_R_step, LOW);
-    digitalWrite(Wing_L_step, LOW);
-    delay(stepDelay_Wings);
-  } 
-}
-void closeWing_R(){
-  digitalWrite(Wing_R_dir, LOW);
-  for(int i=0; i<steps_Wings ; i++){
-    digitalWrite(Wing_R_step, HIGH);
-    delayMicroseconds(stepTime_Wings);
-    digitalWrite(Wing_R_step, LOW);
-    delay(stepDelay_Wings);
-  } 
-}
-void closeWing_L(){
-  digitalWrite(Wing_L_dir, LOW);
-  for(int i=0; i<steps_Wings ; i++){
-    digitalWrite(Wing_L_step, HIGH);
-    delayMicroseconds(stepTime_Wings);
-    digitalWrite(Wing_L_step, LOW);
-    delay(stepDelay_Wings);
-  } 
-}
-
-// Folding Functions for Seating plates
-void foldSeats_up(){
-  digitalWrite(Seat_R_dir, HIGH);
-  digitalWrite(Seat_M_dir, HIGH);
-  digitalWrite(Seat_L_dir, HIGH);
-  for(int i=0; i<steps_Seats ; i++){
-    digitalWrite(Seat_R_step, HIGH);
-    digitalWrite(Seat_M_step, HIGH);
-    digitalWrite(Seat_L_step, HIGH);
-    delayMicroseconds(stepTime_Seats);
-    digitalWrite(Seat_R_step, LOW);
-    digitalWrite(Seat_M_step, LOW);
-    digitalWrite(Seat_L_step, LOW);
-    delay(stepDelay_Seats);
-  } 
-}
-void foldSeats_RL_up(){
-  digitalWrite(Seat_R_dir, HIGH);
-  digitalWrite(Seat_L_dir, HIGH);
-  for(int i=0; i<steps_Seats ; i++){
-    digitalWrite(Seat_R_step, HIGH);
-    digitalWrite(Seat_L_step, HIGH);
-    delayMicroseconds(stepTime_Seats);
-    digitalWrite(Seat_R_step, LOW);
-    digitalWrite(Seat_L_step, LOW);
-    delay(stepDelay_Seats);
-  } 
-}
-void foldSeats_L_up(){
-  digitalWrite(Seat_L_dir, HIGH);
-  for(int i=0; i<steps_Seats ; i++){
-    digitalWrite(Seat_L_step, HIGH);
-    delayMicroseconds(stepTime_Seats);
-    digitalWrite(Seat_L_step, LOW);
-    delay(stepDelay_Seats);
-  } 
-}
-void foldSeats_M_up(){
-  digitalWrite(Seat_M_dir, HIGH);
-  for(int i=0; i<steps_Seats ; i++){
-    digitalWrite(Seat_M_step, HIGH);
-    delayMicroseconds(stepTime_Seats);
-    digitalWrite(Seat_M_step, LOW);
-    delay(stepDelay_Seats);
-  } 
-}
-void foldSeats_R_up(){
-  digitalWrite(Seat_R_dir, HIGH);
-  for(int i=0; i<steps_Seats ; i++){
-    digitalWrite(Seat_R_step, HIGH);
-    delayMicroseconds(stepTime_Seats);
-    digitalWrite(Seat_R_step, LOW);
-    delay(stepDelay_Seats);
-  } 
-}
-void foldSeats_down(){
-  digitalWrite(Seat_R_dir, LOW);
-  digitalWrite(Seat_M_dir, LOW);
-  digitalWrite(Seat_L_dir, LOW);
-  for(int i=0; i<steps_Seats ; i++){
-    digitalWrite(Seat_R_step, HIGH);
-    digitalWrite(Seat_M_step, HIGH);
-    digitalWrite(Seat_L_step, HIGH);
-    delayMicroseconds(stepTime_Seats);
-    digitalWrite(Seat_R_step, LOW);
-    digitalWrite(Seat_M_step, LOW);
-    digitalWrite(Seat_L_step, LOW);
-    delay(stepDelay_Seats);
-  } 
-}
-void foldSeats_RL_down(){
-  digitalWrite(Seat_R_dir, LOW);
-  digitalWrite(Seat_L_dir, LOW);
-  for(int i=0; i<steps_Seats ; i++){
-    digitalWrite(Seat_R_step, HIGH);
-    digitalWrite(Seat_L_step, HIGH);
-    delayMicroseconds(stepTime_Seats);
-    digitalWrite(Seat_R_step, LOW);
-    digitalWrite(Seat_L_step, LOW);
-    delay(stepDelay_Seats);
-  } 
-}
-void foldSeats_L_down(){
-  digitalWrite(Seat_L_dir, LOW);
-  for(int i=0; i<steps_Seats ; i++){
-    digitalWrite(Seat_L_step, HIGH);
-    delayMicroseconds(stepTime_Seats);
-    digitalWrite(Seat_L_step, LOW);
-    delay(stepDelay_Seats);
-  } 
-}
-void foldSeats_M_down(){
-  digitalWrite(Seat_M_dir, LOW);
-  for(int i=0; i<steps_Seats ; i++){
-    digitalWrite(Seat_M_step, HIGH);
-    delayMicroseconds(stepTime_Seats);
-    digitalWrite(Seat_M_step, LOW);
-    delay(stepDelay_Seats);
-  } 
-}
-void foldSeats_R_down(){
-  digitalWrite(Seat_R_dir, LOW);
-  for(int i=0; i<steps_Seats ; i++){
-    digitalWrite(Seat_R_step, HIGH);
-    delayMicroseconds(stepTime_Seats);
-    digitalWrite(Seat_R_step, LOW);
-    delay(stepDelay_Seats);
-  } 
-}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////// LOCALIZATION ALGORITHM /////////////////////////////////////////////////////////////////////////////////////////////////////////

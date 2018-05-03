@@ -68,3 +68,10 @@ void Pose::newAngleIMU(float yaw_prev, float yaw_is) {
 	delta_angle = yaw_is - yaw_prev;
 	IMU_angle = globalPose[2] + delta_angle;
 }
+
+void Pose::calctoGo_local(){
+	toGo_global[0] = globalPose_should[0] - globalPose[0];
+	toGo_global[1] = globalPose_should[1] - globalPose[1];
+	toGo_global[2] = globalPose_should[2] - globalPose[2];
+	Matrix.Multiply((float*) Trafo_inv, (float*) toGo_global, 3, 3, 1, (float*) toGo_local );
+}

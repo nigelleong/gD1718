@@ -14,20 +14,23 @@ private:
 	float Trafo[3][3];
 	float Trafo_inv[3][3];
 	void calcTrafo(float);
+	float toGo_global[3];
 	
 	
 public:	
-	float calc_v_to_Pose_should(float*, float, float);	//float* v, float max speed, float max rotationsl speed
-	float globalPose_should[3];
-	float globalPose[3];
-	float odometryPose[3];
-	float IMU_angle;
 	Pose();
 	Pose(float, float, float);
+	float calc_v_to_Pose_should(float*, float, float);	//float* v, float max speed, float max rotationsl speed
+	double globalPose_should[3];
+	double globalPose[3];
+	float odometryPose[3];
+	float IMU_angle;
 	void setglobalPose(float, float, float);
 	void setglobalPose_should(float, float, float);
 	void newPoseOdometry(float* , Mecanum, float );
 	void newAngleIMU(float, float);
+	void calctoGo_local();
+	float toGo_local[3];
 };
 
 #endif
