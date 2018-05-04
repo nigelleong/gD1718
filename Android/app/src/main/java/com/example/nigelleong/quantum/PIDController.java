@@ -19,7 +19,7 @@ import java.io.IOException;
 
 public class PIDController extends AppCompatActivity implements View.OnClickListener {
 
-    Button btnStandby;
+    Button btnStandby, btnGoTo5050;
 
     BluetoothSocket btSocket;
     BluetoothSocketHelper bluetoothSocketHelper;
@@ -37,8 +37,17 @@ public class PIDController extends AppCompatActivity implements View.OnClickList
         btSocket = bluetoothSocketHelper.getBluetoothSocket();
         Log.d("PIDController",btSocket.toString());
 
+<<<<<<< HEAD
 //        btnStandby = (Button)findViewById(R.id.btn_pid_standby);
 //        btnStandby.setOnClickListener(this);
+=======
+        btnStandby = (Button)findViewById(R.id.btn_pid_standby);
+        btnGoTo5050 = (Button)findViewById(R.id.btn_goto5050);
+
+
+        btnStandby.setOnClickListener(this);
+        btnGoTo5050.setOnClickListener(this);
+>>>>>>> e995c3abdbe4a4fde201c7e117d340e22417ad1c
 
         //Switch to PID position control (state = 5);
         if (btSocket!=null) {
@@ -67,15 +76,36 @@ public class PIDController extends AppCompatActivity implements View.OnClickList
     @Override
     public void onClick(View view) {
         switch(view.getId()) {
+<<<<<<< HEAD
 //            case R.id.btn_pid_standby:
 //                Intent drivingIntent = new Intent(PIDController.this, standbyController.class);
 //                startActivity(drivingIntent);
 //                break;
+=======
+            case R.id.btn_pid_standby:
+                Intent drivingIntent = new Intent(PIDController.this, standbyController.class);
+                startActivity(drivingIntent);
+                break;
+            case R.id.btn_goto5050:
+                moveTo5050();
+                break;
+>>>>>>> e995c3abdbe4a4fde201c7e117d340e22417ad1c
             default:
                 break;
         }
     }
 
+    private void moveTo5050() {
+        if (btSocket!=null) {
+            try {
+//                btSocket.getOutputStream().write("M|2000|2000|90!".getBytes());
+                btSocket.getOutputStream().write("T|500|500|0!".getBytes());
+                toastMsg("Command 'Go to Position 50 50' sent");
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+    }
     /* Exemple:
     private void setToOdoIMUNFC() {
         if (btSocket!=null) {

@@ -88,7 +88,7 @@ public class deviceListController extends AppCompatActivity implements View.OnCl
             String address = info.substring(info.length() - 17);
 
             // Make an intent to start next activity.
-            Intent intent = new Intent(deviceListController.this, standbyController.class);
+            Intent intent = new Intent(deviceListController.this, afterPairing.class);
             intent.putExtra(EXTRA_ADDRESS, address);
             startActivity(intent);
         }

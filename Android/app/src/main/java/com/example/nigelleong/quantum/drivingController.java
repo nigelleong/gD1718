@@ -19,7 +19,7 @@ import java.io.IOException;
 
 public class drivingController extends AppCompatActivity implements View.OnClickListener {
 
-    Button btnUp, btnDown, btnLeft, btnRight, btnStandby, btnReset, btnOdo, btnOdoIMU, btnOdoIMUNFC;
+    Button btnUp, btnDown, btnLeft, btnRight, btnStandby, btnReset, btnOdo, btnOdoIMU, btnOdoIMUNFC, btnClockwise, btnCounterClockwise;
 
     BluetoothSocket btSocket;
     BluetoothSocketHelper bluetoothSocketHelper;
@@ -46,6 +46,8 @@ public class drivingController extends AppCompatActivity implements View.OnClick
         btnOdo = (Button)findViewById(R.id.btn_odo);
         btnOdoIMU = (Button)findViewById(R.id.btn_odo_imu);
         btnOdoIMUNFC = (Button)findViewById(R.id.btn_odo_imu_nfc);
+        btnClockwise = (Button)findViewById(R.id.btn_clockwise);
+        btnCounterClockwise = (Button)findViewById(R.id.btn_counterclock);
 
 
         btnUp.setOnClickListener(this);
@@ -57,6 +59,8 @@ public class drivingController extends AppCompatActivity implements View.OnClick
         btnOdo.setOnClickListener(this);
         btnOdoIMU.setOnClickListener(this);
         btnOdoIMUNFC.setOnClickListener(this);
+        btnClockwise.setOnClickListener(this);
+        btnCounterClockwise.setOnClickListener(this);
 
 
         //Switch to DRIVING (state = 1);
@@ -98,10 +102,23 @@ public class drivingController extends AppCompatActivity implements View.OnClick
             case R.id.btn_right:
                 robotGoRight();
                 break;
+<<<<<<< HEAD
 //            case R.id.btn_driving_standby:
 //                Intent drivingIntent = new Intent(drivingController.this, standbyController.class);
 //                startActivity(drivingIntent);
 //                break;
+=======
+            case R.id.btn_clockwise:
+                robotTurnClockwise();
+                break;
+            case R.id.btn_counterclock:
+                robotTurnCounterclockwise();
+                break;
+            case R.id.btn_driving_standby:
+                Intent drivingIntent = new Intent(drivingController.this, standbyController.class);
+                startActivity(drivingIntent);
+                break;
+>>>>>>> e995c3abdbe4a4fde201c7e117d340e22417ad1c
             case R.id.btn_reset:
                 resetPose();
                 break;
@@ -119,7 +136,28 @@ public class drivingController extends AppCompatActivity implements View.OnClick
         }
     }
 
-
+    private void robotTurnClockwise() {
+        if (btSocket!=null) {
+            try {
+//                btSocket.getOutputStream().write("M|2000|2000|90!".getBytes());
+                btSocket.getOutputStream().write("M|0|0|-0.5!".getBytes());
+                toastMsg("Command 'turn clockwise' sent");
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+    }
+    private void robotTurnCounterclockwise() {
+        if (btSocket!=null) {
+            try {
+//                btSocket.getOutputStream().write("M|2000|2000|90!".getBytes());
+                btSocket.getOutputStream().write("M|0|0|0.5!".getBytes());
+                toastMsg("Command 'turn counter clockwise' sent");
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+    }
     private void robotGoUp() {
         if (btSocket!=null) {
             try {
