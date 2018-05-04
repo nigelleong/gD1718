@@ -19,8 +19,6 @@ import java.io.IOException;
 
 public class layoutController extends AppCompatActivity implements View.OnClickListener {
 
-    Button btnStandby;
-
     BluetoothSocket btSocket;
     BluetoothSocketHelper bluetoothSocketHelper;
 

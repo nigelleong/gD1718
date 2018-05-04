@@ -43,20 +43,11 @@ public class standbyController extends AppCompatActivity implements View.OnClick
         btSocket = bluetoothSocketHelper.getBluetoothSocket();
         Log.d("standbyController", btSocket.toString());
 
-<<<<<<< HEAD
         btnDriving = (Button)findViewById(R.id.btn_driving);
         btnFolding = (Button)findViewById(R.id.btn_folding);
         btnAnalog = (Button)findViewById(R.id.btn_analog);
         btnLayouts = (Button)findViewById(R.id.btn_layouts);
         btnPID = (Button)findViewById(R.id.btn_PID);
-=======
-        btnDriving = (Button) findViewById(R.id.btn_driving);
-        btnFolding = (Button) findViewById(R.id.btn_folding);
-        btnAnalog = (Button) findViewById(R.id.btn_analog);
-        btnLayouts = (Button) findViewById(R.id.btn_layouts);
-        btnLayouts = (Button) findViewById(R.id.btn_PID);
->>>>>>> e995c3abdbe4a4fde201c7e117d340e22417ad1c
-
 
         btnDriving.setOnClickListener(this);
         btnFolding.setOnClickListener(this);

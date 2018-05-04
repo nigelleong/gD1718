@@ -56,22 +56,6 @@
             android:name=".PIDController"
             android:label="PIDController">
         </activity>
-<<<<<<< HEAD
-
-=======
-        <activity
-            android:name=".layoutController"
-            android:label="layoutController">
-
-            <!-- android:parentActivityName ="boundary.MainInterface"> -->
-        </activity>
-        <activity
-            android:name=".PIDController"
-            android:label="PIDController">
-
-            <!-- android:parentActivityName ="boundary.MainInterface"> -->
-        </activity>
->>>>>>> e995c3abdbe4a4fde201c7e117d340e22417ad1c
     </application>
 
 </manifest>

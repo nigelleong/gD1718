@@ -102,23 +102,16 @@ public class drivingController extends AppCompatActivity implements View.OnClick
             case R.id.btn_right:
                 robotGoRight();
                 break;
-<<<<<<< HEAD
 //            case R.id.btn_driving_standby:
 //                Intent drivingIntent = new Intent(drivingController.this, standbyController.class);
 //                startActivity(drivingIntent);
 //                break;
-=======
             case R.id.btn_clockwise:
                 robotTurnClockwise();
                 break;
             case R.id.btn_counterclock:
                 robotTurnCounterclockwise();
                 break;
-            case R.id.btn_driving_standby:
-                Intent drivingIntent = new Intent(drivingController.this, standbyController.class);
-                startActivity(drivingIntent);
-                break;
->>>>>>> e995c3abdbe4a4fde201c7e117d340e22417ad1c
             case R.id.btn_reset:
                 resetPose();
                 break;
