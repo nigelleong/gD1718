@@ -56,7 +56,7 @@ public class standbyController extends AppCompatActivity implements View.OnClick
         btnFolding = (Button)findViewById(R.id.btn_folding);
         btnAnalog = (Button)findViewById(R.id.btn_analog);
         btnLayouts = (Button)findViewById(R.id.btn_layouts);
-        btnLayouts = (Button)findViewById(R.id.btn_PID);
+        btnPID = (Button)findViewById(R.id.btn_PID);
 
         new ConnectBT().execute();
 
@@ -64,7 +64,7 @@ public class standbyController extends AppCompatActivity implements View.OnClick
         btnFolding.setOnClickListener(this);
         btnAnalog.setOnClickListener(this);
         btnLayouts.setOnClickListener(this);
-        btnLayouts.setOnClickListener(this);
+        btnPID.setOnClickListener(this);
 
         //Switch to STANDBY (state = 0);
         if (btSocket!=null) {
@@ -74,6 +74,7 @@ public class standbyController extends AppCompatActivity implements View.OnClick
                 toastMsg("Error");
             }
         }
+        Log.d("STATE", "0");
     }
 
     @Override

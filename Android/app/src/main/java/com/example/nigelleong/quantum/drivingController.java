@@ -41,7 +41,7 @@ public class drivingController extends AppCompatActivity implements View.OnClick
         btnDown = (Button)findViewById(R.id.btn_down);
         btnLeft = (Button)findViewById(R.id.btn_left);
         btnRight = (Button)findViewById(R.id.btn_right);
-        btnStandby = (Button)findViewById(R.id.btn_driving_standby);
+//        btnStandby = (Button)findViewById(R.id.btn_driving_standby);
         btnReset = (Button)findViewById(R.id.btn_reset);
         btnOdo = (Button)findViewById(R.id.btn_odo);
         btnOdoIMU = (Button)findViewById(R.id.btn_odo_imu);
@@ -52,7 +52,7 @@ public class drivingController extends AppCompatActivity implements View.OnClick
         btnDown.setOnClickListener(this);
         btnLeft.setOnClickListener(this);
         btnRight.setOnClickListener(this);
-        btnStandby.setOnClickListener(this);
+//        btnStandby.setOnClickListener(this);
         btnReset.setOnClickListener(this);
         btnOdo.setOnClickListener(this);
         btnOdoIMU.setOnClickListener(this);
@@ -67,6 +67,20 @@ public class drivingController extends AppCompatActivity implements View.OnClick
                 toastMsg("Error");
             }
         }
+        Log.d("STATE", "1");
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("S|0|0|0!".getBytes());
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+        Log.d("STATE", "0");
+        super.onDestroy();
     }
 
     @Override
@@ -84,10 +98,10 @@ public class drivingController extends AppCompatActivity implements View.OnClick
             case R.id.btn_right:
                 robotGoRight();
                 break;
-            case R.id.btn_driving_standby:
-                Intent drivingIntent = new Intent(drivingController.this, standbyController.class);
-                startActivity(drivingIntent);
-                break;
+//            case R.id.btn_driving_standby:
+//                Intent drivingIntent = new Intent(drivingController.this, standbyController.class);
+//                startActivity(drivingIntent);
+//                break;
             case R.id.btn_reset:
                 resetPose();
                 break;

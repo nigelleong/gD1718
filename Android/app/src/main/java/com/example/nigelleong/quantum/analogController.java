@@ -13,19 +13,23 @@ import android.bluetooth.BluetoothSocket;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
 
-public class analogController extends AppCompatActivity implements View.OnClickListener {
+import io.github.controlwear.virtual.joystick.android.JoystickView;
 
-    Button btnStandby;
+public class analogController extends AppCompatActivity implements View.OnClickListener {
 
     BluetoothSocket btSocket;
     BluetoothSocketHelper bluetoothSocketHelper;
 
     byte[] buffer = new byte[1024];  // buffer store for the stream
     int bytes; // bytes returned from read()
+
+    private TextView mAngleValue;
+    private TextView mStrengthValue;
 
 
     @Override
@@ -37,11 +41,17 @@ public class analogController extends AppCompatActivity implements View.OnClickL
         btSocket = bluetoothSocketHelper.getBluetoothSocket();
         Log.d("analogController",btSocket.toString());
 
-        btnStandby = (Button)findViewById(R.id.btn_analog_standby);
+        mAngleValue = (TextView) findViewById(R.id.txt_angleValue);
+        mStrengthValue = (TextView) findViewById(R.id.txt_strengthValue);
 
-
-        btnStandby.setOnClickListener(this);
-
+        JoystickView joystickLeft = (JoystickView) findViewById(R.id.joystick);
+        joystickLeft.setOnMoveListener(new JoystickView.OnMoveListener() {
+            @Override
+            public void onMove(int angle, int strength) {
+                mAngleValue.setText(angle + "°");
+                mStrengthValue.setText(strength + "%");
+            }
+        });
 
         //Switch to Analog remote control (state = 3);
         if (btSocket!=null) {
@@ -51,15 +61,29 @@ public class analogController extends AppCompatActivity implements View.OnClickL
                 toastMsg("Error");
             }
         }
+        Log.d("STATE", "3");
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("S|0|0|0!".getBytes());
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+        Log.d("STATE", "0");
+        super.onDestroy();
     }
 
     @Override
     public void onClick(View view) {
         switch(view.getId()) {
-            case R.id.btn_analog_standby:
-                Intent drivingIntent = new Intent(analogController.this, standbyController.class);
-                startActivity(drivingIntent);
-                break;
+//            case R.id.btn_analog_standby:
+//                Intent drivingIntent = new Intent(analogController.this, standbyController.class);
+//                startActivity(drivingIntent);
+//                break;
             default:
                 break;
         }

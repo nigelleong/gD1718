@@ -6,13 +6,62 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <Button
-        android:id="@+id/btn_analog_standby"
+    <!--<Button-->
+        <!--android:id="@+id/btn_analog_standby"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_alignParentStart="true"-->
+        <!--android:layout_alignParentTop="true"-->
+        <!--android:layout_marginStart="89dp"-->
+        <!--android:layout_marginTop="174dp"-->
+        <!--android:text="Standby" />-->
+
+    <io.github.controlwear.virtual.joystick.android.JoystickView
+        xmlns:custom="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/joystick"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="64dp"
+        custom:JV_borderWidth="8dp"
+        custom:JV_backgroundColor="#DEDEDE"
+        custom:JV_borderColor="#ADADAD"
+        custom:JV_buttonColor="#00796B"/>
+
+    <TextView
+        android:id="@+id/lbl_angle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/joystickView_right"
         android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginStart="89dp"
-        android:layout_marginTop="174dp"
-        android:text="Standby" />
+        android:layout_marginBottom="16dp"
+        android:layout_marginStart="41dp"
+        android:text="Angle: " />
+
+    <TextView
+        android:id="@+id/txt_angleValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/lbl_angle"
+        android:layout_marginStart="17dp"
+        android:layout_toEndOf="@+id/lbl_angle"
+        android:text="TextView" />
+
+    <TextView
+        android:id="@+id/lbl_strength"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/lbl_angle"
+        android:layout_toStartOf="@+id/txt_angleValue"
+        android:text="Strength: " />
+
+    <TextView
+        android:id="@+id/txt_strengthValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignEnd="@+id/txt_angleValue"
+        android:layout_below="@+id/lbl_angle"
+        android:text="TextView" />
+
 </RelativeLayout>

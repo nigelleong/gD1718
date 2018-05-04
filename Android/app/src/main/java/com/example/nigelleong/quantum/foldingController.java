@@ -38,6 +38,21 @@ public class foldingController extends AppCompatActivity implements View.OnClick
 
         btnFoldSeats.setOnClickListener(this);
         btnFoldWings.setOnClickListener(this);
+
+        Log.d("STATE", "2?");
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("S|0|0|0!".getBytes());
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+        Log.d("STATE", "0");
+        super.onDestroy();
     }
 
     @Override

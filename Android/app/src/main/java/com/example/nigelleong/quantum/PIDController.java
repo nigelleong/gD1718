@@ -37,11 +37,8 @@ public class PIDController extends AppCompatActivity implements View.OnClickList
         btSocket = bluetoothSocketHelper.getBluetoothSocket();
         Log.d("PIDController",btSocket.toString());
 
-        btnStandby = (Button)findViewById(R.id.btn_pid_standby);
-
-
-        btnStandby.setOnClickListener(this);
-
+//        btnStandby = (Button)findViewById(R.id.btn_pid_standby);
+//        btnStandby.setOnClickListener(this);
 
         //Switch to PID position control (state = 5);
         if (btSocket!=null) {
@@ -51,15 +48,29 @@ public class PIDController extends AppCompatActivity implements View.OnClickList
                 toastMsg("Error");
             }
         }
+        Log.d("STATE", "5");
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("S|0|0|0!".getBytes());
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+        Log.d("STATE", "0");
+        super.onDestroy();
     }
 
     @Override
     public void onClick(View view) {
         switch(view.getId()) {
-            case R.id.btn_pid_standby:
-                Intent drivingIntent = new Intent(PIDController.this, standbyController.class);
-                startActivity(drivingIntent);
-                break;
+//            case R.id.btn_pid_standby:
+//                Intent drivingIntent = new Intent(PIDController.this, standbyController.class);
+//                startActivity(drivingIntent);
+//                break;
             default:
                 break;
         }

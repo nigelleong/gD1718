@@ -37,11 +37,8 @@ public class layoutController extends AppCompatActivity implements View.OnClickL
         btSocket = bluetoothSocketHelper.getBluetoothSocket();
         Log.d("layoutController",btSocket.toString());
 
-        btnStandby = (Button)findViewById(R.id.btn_layout_standby);
-
-
-        btnStandby.setOnClickListener(this);
-
+//        btnStandby = (Button)findViewById(R.id.btn_layout_standby);
+//        btnStandby.setOnClickListener(this);
 
         //Switch to LAYOUTS (state = 4);
         if (btSocket!=null) {
@@ -51,15 +48,29 @@ public class layoutController extends AppCompatActivity implements View.OnClickL
                 toastMsg("Error");
             }
         }
+        Log.d("STATE", "4");
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("S|0|0|0!".getBytes());
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+        Log.d("STATE", "0");
+        super.onDestroy();
     }
 
     @Override
     public void onClick(View view) {
         switch(view.getId()) {
-            case R.id.btn_layout_standby:
-                Intent drivingIntent = new Intent(layoutController.this, standbyController.class);
-                startActivity(drivingIntent);
-                break;
+//            case R.id.btn_layout_standby:
+//                Intent drivingIntent = new Intent(layoutController.this, standbyController.class);
+//                startActivity(drivingIntent);
+//                break;
             default:
                 break;
         }

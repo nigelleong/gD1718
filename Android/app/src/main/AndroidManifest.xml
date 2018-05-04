@@ -20,30 +20,37 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".standbyController"
             android:label="standbyController">
-
-            <!-- android:parentActivityName ="boundary.MainInterface"> -->
         </activity>
+
         <activity
             android:name=".drivingController"
             android:label="drivingController">
-
-            <!-- android:parentActivityName ="boundary.MainInterface"> -->
         </activity>
+
         <activity
             android:name=".foldingController"
             android:label="foldingController">
-
-            <!-- android:parentActivityName ="boundary.MainInterface"> -->
         </activity>
+
         <activity
             android:name=".analogController"
             android:label="analogController">
-
-            <!-- android:parentActivityName ="boundary.MainInterface"> -->
         </activity>
+
+        <activity
+            android:name=".layoutController"
+            android:label="layoutController">
+        </activity>
+
+        <activity
+            android:name=".PIDController"
+            android:label="PIDController">
+        </activity>
+
     </application>
 
 </manifest>
