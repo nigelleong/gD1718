@@ -65,7 +65,7 @@ const int Encoder_4_pin = 19;
 // Dimensions of Robot
 float l_x = 225.5;
 float l_y = 217.5;
-float R = 30;
+float R = 60;
 
 // Dimenstions of operation area:
 float area_x = 1250;
@@ -76,6 +76,7 @@ float safe_dis = 325; // safety distance to the edge of the stage
 const float translation = 74.831;
 // Encoder sample time in milliseconds (is equal to odometry -> and fusion with IMU)
 const int encoder_frequency = 50;
+const int IMU_frequency = 100;
 // Encoder counts per round
 const float counts_per_round = 3591.84;
 // PID sample time
@@ -143,6 +144,9 @@ Encoder Encoder_4(counts_per_round);
 unsigned long time;
 unsigned long time_prev = 0;
 int time_diff;
+int time_diff_IMU;
+unsigned long time_prev_IMU;
+
 
 // Speeds
 double v[3]; // desired speed in local frame
@@ -354,6 +358,7 @@ void loop() {
         }
         case 'M': //Moving with velocities defined by arg1-3 for a certain time
         {
+          DC_STOP = false;
           if(layout!=0){
             if(print_to_COM){
               Serial.println("Bevore moving change into privacy/moving configuration!!");
@@ -438,7 +443,7 @@ void loop() {
     ////////////////////////////////////////////////////////////
     // REMOTE CONTROL //////////////////////////////////////////
     ////////////////////////////////////////////////////////////
-    case '3':
+    case 3:
     {
       // Waiting for commands
       read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);
@@ -483,6 +488,7 @@ void loop() {
           yaw_prev = ypr[0];
           //time_prev NEEDED for localization: Before starting localization always ste time_prev to millis!!
           time_prev = millis();
+		  time_prev_IMU = millis();
 
           while(command!='M'){
             read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);
@@ -508,10 +514,11 @@ void loop() {
       }
       break;
     }
+
     ////////////////////////////////////////////////////////////
     // PID POSITION CONTROL ////////////////////////////////////
     ////////////////////////////////////////////////////////////
-    case '5':
+    case 5:
     {
       // Waiting for commands
       read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);
@@ -547,7 +554,7 @@ void loop() {
             Serial.print("\t theta: ");
             Serial.println(arg3);
           }
-          
+          DC_STOP = false;
           // Print header for localization results
           if(print_to_COM){
             switch(loc_method){
@@ -564,18 +571,15 @@ void loop() {
 
           // Calculated distance to go in local system         
           Robot_Pose.calctoGo_local();
-
           while(abs(Robot_Pose.toGo_local[0])>Pose_error_xy || abs(Robot_Pose.toGo_local[1])>Pose_error_xy || abs(Robot_Pose.toGo_local[2])>Pose_error_theta){
             if(abs(Robot_Pose.toGo_local[0])<PID_dis_x){
               PID_x.Compute();
-              
             }
             else{
               v[0] = sgn(Robot_Pose.toGo_local[0])*v_max_x;
             }
             if(abs(Robot_Pose.toGo_local[1])<PID_dis_y){
               PID_y.Compute();
-              
             }
             else{
               v[1] = sgn(Robot_Pose.toGo_local[1])*v_max_y;
@@ -595,12 +599,16 @@ void loop() {
             SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
             // Desired wheel speeds WITHOUT SIGN (needed for PID controller
             SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
-            
-            localize_Robot();
+                     
             if(!DC_STOP){
               run_DC();
             }
+            localize_Robot();
+            
             Robot_Pose.calctoGo_local();
+            Serial.println(v[0]);
+            Serial.println(v[1]);
+
           }
           DC_STOP = allWheelsSTOP();
           if(print_to_COM){
@@ -620,6 +628,7 @@ void loop() {
       if(print_to_COM){
         Serial.println("ERROR: No state selected");
       }
+      read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);
       break;
     }
   }
@@ -715,8 +724,10 @@ void read_BT_command(char* command_buffer, char *command, int *arg1, int *arg2, 
 void print_globalPose(){
   if(print_to_COM){
     Serial.println("The (new) pose is: ");
-    Serial.print(Robot_Pose.globalPose[0],"\t");
-    Serial.print(Robot_Pose.globalPose[1],"\t");
+    Serial.print(Robot_Pose.globalPose[0]);
+    Serial.print("\t");
+    Serial.print(Robot_Pose.globalPose[1]);
+    Serial.print("\t");
     Serial.println(Robot_Pose.globalPose[2]);
   }
 }
@@ -808,7 +819,7 @@ void change_state(int arg1){
     }  
     case 5: 
     {
-      change_loc_method(2);
+      change_loc_method(0);
       break;
     }          
   }
@@ -888,7 +899,14 @@ void getEnconderSpeeds(int time_diff){
   w_is[3] = Encoder_4.calcSpeed(time_diff);
   Encoder_4.count = 0;
   //Add Sign assuming all wheels rotate with the correct direction
-  include_sign();
+  for(int i=0; i<4; i++){
+    if(w[i]<0){
+      w_is_sign[i] = -w_is[i];
+    }
+    else {
+      w_is_sign[i] = w_is[i];
+    }
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -957,18 +975,6 @@ bool allSteppersSTOP(){
   return true;
   }
   
-//////////////////////////////////////////////////////////////////////////////////////
-  // Correct sign of w_is with w
-void include_sign(){
-  for(int i=0; i++; i<=4){
-    if(w[i]<0){
-      w_is_sign[i] = -w_is[i];
-    }
-    else {
-      w_is_sign[i] = w_is[i];
-    }
-  }
-}
 
 //////////////////////////////////////////////////////////////////////////////////////
 
@@ -1043,36 +1049,43 @@ void Init_IMU_RFID(){
 //time_prev NEEDED for localization: Before starting localization always ste time_prev to millis!!
 void localize_Robot(){
   time_diff = millis() - time_prev;
+  time_diff_IMU = millis() - time_prev_IMU;
   // Localization
-  if (time_diff > encoder_frequency) {
+  if (time_diff > encoder_frequency){ 
     //Calculate wheel speeds 
     getEnconderSpeeds(time_diff);
     // Calculate position via odometry
     Robot_Pose.newPoseOdometry((float*)w_is_sign, SRTMecanum, time_diff);
+    time_prev = millis();
     switch(loc_method){
       case 0: //odometry
       {
         // new pose is odometry pose
+        //Serial.println(Robot_Pose.odometryPose[0]);
         Robot_Pose.setglobalPose(Robot_Pose.odometryPose[0], Robot_Pose.odometryPose[1], Robot_Pose.odometryPose[2]);
         break;
       }
       case 1: //odometry + IMU
       case 2: //odometry + IMU + RFID
       {
-        // read a packet from FIFO of IMU
-        get_IMU_yaw(); //writes to ypr[0];
-        //new angle according to IMU
-        Robot_Pose.newAngleIMU(yaw_prev, ypr[0]);
-        // Claculate new Pose by fusing yaw angle from IMU with odometry data
-        KalmanOdoIMU.calcNewState((float*)w_is_sign, SRTMecanum, Robot_Pose, time_diff);
-        Robot_Pose.setglobalPose(KalmanOdoIMU.new_State[0], KalmanOdoIMU.new_State[1], KalmanOdoIMU.new_State[2]);
-        yaw_prev = ypr[0];
+		    if(time_diff_IMU > IMU_frequency){
+    			// read a packet from FIFO of IMU
+    			get_IMU_yaw(); //writes to ypr[0];
+    			//new angle according to IMU
+    			Robot_Pose.newAngleIMU(yaw_prev, ypr[0]);
+    			// Claculate new Pose by fusing yaw angle from IMU with odometry data
+    			KalmanOdoIMU.calcNewState((float*)w_is_sign, SRTMecanum, Robot_Pose, time_diff_IMU);
+    			Robot_Pose.setglobalPose(KalmanOdoIMU.new_State[0], KalmanOdoIMU.new_State[1], KalmanOdoIMU.new_State[2]);
+    			yaw_prev = ypr[0];
+    			time_prev_IMU = millis();
+		    }
+    		else {
+    			Robot_Pose.setglobalPose(Robot_Pose.odometryPose[0], Robot_Pose.odometryPose[1], Robot_Pose.odometryPose[2]);
+    		}
         break;
       }
-    }
+    }   
     
-    // Reset time for Encoder
-    time_prev = millis();
     // Print localization results
     if(print_to_COM){
       Print_Serial_Localization();
@@ -1148,6 +1161,26 @@ void Print_Serial_Localization(){
     }
     case 2:
     {
+      Serial.print("\t\t");
+      Serial.print(Robot_Pose.odometryPose[0]);
+      Serial.print("\t");
+      Serial.print(Robot_Pose.odometryPose[1]);
+      Serial.print("\t");
+      Serial.print(Robot_Pose.odometryPose[2]);
+      Serial.print("\t\t\t");
+      Serial.print(Robot_Pose.IMU_angle);
+      Serial.print("\t\t\t");
+      Serial.print(KalmanOdoIMU.new_State[0]);
+      Serial.print("\t");
+      Serial.print(KalmanOdoIMU.new_State[1]);
+      Serial.print("\t");
+      Serial.print(KalmanOdoIMU.new_State[2]);
+      Serial.print("\t\t\t");
+      Serial.print(Robot_Pose.globalPose[0]);
+      Serial.print("\t");
+      Serial.print(Robot_Pose.globalPose[1]);
+      Serial.print("\t");
+      Serial.println(Robot_Pose.globalPose[2]);
       break;
     }
   }

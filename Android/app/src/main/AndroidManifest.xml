@@ -21,6 +21,12 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".afterPairing"
+            android:label="afterPairing">
+
+            <!-- android:parentActivityName ="boundary.MainInterface"> -->
+        </activity>
+        <activity
             android:name=".standbyController"
             android:label="standbyController">
 
@@ -41,6 +47,18 @@
         <activity
             android:name=".analogController"
             android:label="analogController">
+
+            <!-- android:parentActivityName ="boundary.MainInterface"> -->
+        </activity>
+        <activity
+            android:name=".layoutController"
+            android:label="layoutController">
+
+            <!-- android:parentActivityName ="boundary.MainInterface"> -->
+        </activity>
+        <activity
+            android:name=".PIDController"
+            android:label="PIDController">
 
             <!-- android:parentActivityName ="boundary.MainInterface"> -->
         </activity>

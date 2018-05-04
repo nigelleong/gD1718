@@ -84,4 +84,22 @@
         android:layout_toStartOf="@+id/btn_up"
         android:text="Reset Pose" />
 
+    <Button
+        android:id="@+id/btn_clockwise"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignStart="@+id/btn_right"
+        android:layout_marginTop="185dp"
+        android:text="Clockwise" />
+
+    <Button
+        android:id="@+id/btn_counterclock"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/btn_down"
+        android:layout_marginStart="32dp"
+        android:text="Counterclockwise" />
+
 </RelativeLayout>
