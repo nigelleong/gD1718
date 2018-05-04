@@ -11,7 +11,7 @@ class Encoder {
 		const float pi = 3.14159265359;
 	public:
 		Encoder(float);
-		float calcSpeed(int); //Calculates rotational speed in rad/sec!
+		void calcSpeed(int); //Calculates rotational speed in rad/sec!
 		float speed;
 		long int count = 0;
 		void update();
