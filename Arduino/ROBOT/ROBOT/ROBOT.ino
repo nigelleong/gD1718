@@ -393,11 +393,10 @@ void loop() {
           yaw_prev = ypr[0];
           // Initialize times
           time = millis();
-          
           //time_prev NEEDED for localization: Before starting localization always ste time_prev to millis!!
           time_prev = millis();
-          
           //driving for drive_time milliseconds
+          localize_Robot();
           while(millis()-time<drive_time){
             localize_Robot();          
             if(!DC_STOP){// Compute PID results for DC motors and run DC motors
@@ -405,6 +404,7 @@ void loop() {
             }
           }
           DC_STOP = allWheelsSTOP();
+          localize_Robot();
           break;
         }
         
@@ -488,8 +488,8 @@ void loop() {
           yaw_prev = ypr[0];
           //time_prev NEEDED for localization: Before starting localization always ste time_prev to millis!!
           time_prev = millis();
-		  time_prev_IMU = millis();
-
+		      time_prev_IMU = millis();
+          localize_Robot();
           while(command!='M'){
             read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);
             // Calculations of wheel speeds
@@ -498,6 +498,7 @@ void loop() {
             v[2] = arg3;
             if(v[0]==0&&v[1]==0&&v[2]==0){
               DC_STOP = allWheelsSTOP();
+              break;
             }
             // Calculate desired wheels speeds WITH SIGN
             SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
@@ -507,7 +508,8 @@ void loop() {
             if(!DC_STOP){// Compute PID results for DC motors and run DC motors
               run_DC();
             }          
-          }          
+          } 
+          localize_Robot();         
           break;
         }
         default: {break;} 
@@ -943,7 +945,7 @@ bool allWheelsSTOP(){
   analogWrite(DC_3.pin_speed, 0);
   digitalWrite(DC_4.pin_dir, 0);
   analogWrite(DC_4.pin_speed, 0);
-  delay(1000);
+  delay(50);
   getEnconderSpeeds(50);
   delay(50);
   getEnconderSpeeds(50);
@@ -1074,10 +1076,10 @@ void localize_Robot(){
     			//new angle according to IMU
     			Robot_Pose.newAngleIMU(yaw_prev, ypr[0]);
     			// Claculate new Pose by fusing yaw angle from IMU with odometry data
-    			KalmanOdoIMU.calcNewState((float*)w_is_sign, SRTMecanum, Robot_Pose, time_diff_IMU);
+    			KalmanOdoIMU.calcNewState((float*)w_is_sign, SRTMecanum, Robot_Pose, time_diff); // time_diff !!! Don't use time_diff_IMU !!!
+          time_prev_IMU = millis();
     			Robot_Pose.setglobalPose(KalmanOdoIMU.new_State[0], KalmanOdoIMU.new_State[1], KalmanOdoIMU.new_State[2]);
     			yaw_prev = ypr[0];
-    			time_prev_IMU = millis();
 		    }
     		else {
     			Robot_Pose.setglobalPose(Robot_Pose.odometryPose[0], Robot_Pose.odometryPose[1], Robot_Pose.odometryPose[2]);

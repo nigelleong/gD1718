@@ -16,17 +16,17 @@ KalmanFus::KalmanFus() {
 	P[2][2] = 1;
 	
 	// Initialize covariance action matrix
-	Q[0][0] = 5;
+	Q[0][0] = 0.0077;
 	Q[0][1] = 0;
 	Q[0][2] = 0;
 	
 	Q[1][0] = 0;
-	Q[1][1] = 5;
+	Q[1][1] = 0.8208;
 	Q[1][2] = 0;
 	
 	Q[2][0] = 0;
 	Q[2][1] = 0;
-	Q[2][2] = 100;
+	Q[2][2] = 1;
 	
 	// Sensor uncertainty (IMU) sdt^2 -> Varianze
 	Cov_Sensor = 0.00000009330964141451887;
@@ -56,11 +56,11 @@ KalmanFus::KalmanFus() {
 void KalmanFus::calcJacobiTransition(float * w_is, Mecanum SRT_Mecanum, Pose SRT_Pose, float delta_time) {
 	Jacobi_F[0][0] = 1;
 	Jacobi_F[0][1] = 0;
-	Jacobi_F[0][2] = delta_time*SRT_Mecanum.R/4*sqrt(2)*(cos(SRT_Pose.globalPose[2]+pi/4)*w_is[0]-sin(SRT_Pose.globalPose[2]+pi/4)*w_is[1]+cos(SRT_Pose.globalPose[2]+pi/4)*w_is[2]-sin(SRT_Pose.globalPose[2]+pi/4)*w_is[3]);
+	Jacobi_F[0][2] = delta_time*SRT_Mecanum.R/4*sqrt(2)*(-sin(SRT_Pose.globalPose[2]+pi/4)*w_is[0]+cos(SRT_Pose.globalPose[2]+pi/4)*w_is[1]-sin(SRT_Pose.globalPose[2]+pi/4)*w_is[2]+cos(SRT_Pose.globalPose[2]+pi/4)*w_is[3]);
 	
 	Jacobi_F[1][0] = 0;
 	Jacobi_F[1][1] = 1;
-	Jacobi_F[1][2] = delta_time*SRT_Mecanum.R/4*sqrt(2)*(sin(SRT_Pose.globalPose[2]+pi/4)*w_is[0]+cos(SRT_Pose.globalPose[2]+pi/4)*w_is[1]+sin(SRT_Pose.globalPose[2]+pi/4)*w_is[2]+cos(SRT_Pose.globalPose[2]+pi/4)*w_is[3]);
+	Jacobi_F[1][2] = delta_time*SRT_Mecanum.R/4*sqrt(2)*(cos(SRT_Pose.globalPose[2]+pi/4)*w_is[0]+sin(SRT_Pose.globalPose[2]+pi/4)*w_is[1]+cos(SRT_Pose.globalPose[2]+pi/4)*w_is[2]+sin(SRT_Pose.globalPose[2]+pi/4)*w_is[3]);
 	
 	Jacobi_F[2][0] = 0;
 	Jacobi_F[2][1] = 0;
