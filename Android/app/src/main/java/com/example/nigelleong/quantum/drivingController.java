@@ -133,7 +133,7 @@ public class drivingController extends AppCompatActivity implements View.OnClick
         if (btSocket!=null) {
             try {
 //                btSocket.getOutputStream().write("M|2000|2000|90!".getBytes());
-                btSocket.getOutputStream().write("M|0|0|-0.5!".getBytes());
+                btSocket.getOutputStream().write("M|0|0|-50!".getBytes());
                 toastMsg("Command 'turn clockwise' sent");
             } catch (IOException e) {
                 toastMsg("Error");
@@ -144,7 +144,7 @@ public class drivingController extends AppCompatActivity implements View.OnClick
         if (btSocket!=null) {
             try {
 //                btSocket.getOutputStream().write("M|2000|2000|90!".getBytes());
-                btSocket.getOutputStream().write("M|0|0|0.5!".getBytes());
+                btSocket.getOutputStream().write("M|0|0|50!".getBytes());
                 toastMsg("Command 'turn counter clockwise' sent");
             } catch (IOException e) {
                 toastMsg("Error");
@@ -155,7 +155,7 @@ public class drivingController extends AppCompatActivity implements View.OnClick
         if (btSocket!=null) {
             try {
 //                btSocket.getOutputStream().write("M|2000|2000|90!".getBytes());
-                btSocket.getOutputStream().write("M|100|0|0!".getBytes());
+                btSocket.getOutputStream().write("M|50|0|0!".getBytes());
                 toastMsg("Command 'up' sent");
             } catch (IOException e) {
                 toastMsg("Error");
@@ -166,7 +166,7 @@ public class drivingController extends AppCompatActivity implements View.OnClick
     private void robotGoDown() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("M|-100|0|0!".getBytes());
+                btSocket.getOutputStream().write("M|-50|0|0!".getBytes());
                 toastMsg("Command 'down' sent");
             } catch (IOException e) {
                 toastMsg("Error");
@@ -177,7 +177,7 @@ public class drivingController extends AppCompatActivity implements View.OnClick
     private void robotGoLeft() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("M|0|100|0!".getBytes());
+                btSocket.getOutputStream().write("M|0|50|0!".getBytes());
                 toastMsg("Command 'left' sent");
             } catch (IOException e) {
                 toastMsg("Error");
@@ -188,7 +188,7 @@ public class drivingController extends AppCompatActivity implements View.OnClick
     private void robotGoRight() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("M|0|-100|0!".getBytes());
+                btSocket.getOutputStream().write("M|0|-50|0!".getBytes());
                 toastMsg("Command 'right' sent");
             } catch (IOException e) {
                 toastMsg("Error");

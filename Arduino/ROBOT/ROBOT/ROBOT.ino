@@ -325,10 +325,10 @@ void loop() {
               break;
             }
           }
-          // Calculations of wheel speeds
-          v[0] = arg1;
-          v[1] = arg2;
-          v[2] = arg3;
+          // Calculations of wheel speeds (speeds are local)
+          v[0] = v_max_x*arg1/100;
+          v[1] = v_max_y*arg2/100;
+          v[2] = v_max_theta*arg3/100;
           if(v[0]==0&&v[1]==0&&v[2]==0){
             DC_STOP = allWheelsSTOP();
           }
@@ -358,9 +358,12 @@ void loop() {
           //driving for drive_time milliseconds
           localize_Robot();
           while(millis()-time<drive_time){
-            localize_Robot();          
+            localize_Robot();
+            Serial.println(arg3);
+            Serial.println(v[2]);
+              Serial.println(w_should[0]);          
             if(!DC_STOP){// Compute PID results for DC motors and run DC motors
-              run_DC();
+              run_DC(); 
             }
           }
           DC_STOP = allWheelsSTOP();
