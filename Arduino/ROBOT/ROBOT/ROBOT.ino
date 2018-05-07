@@ -41,7 +41,7 @@ const int PID_sample_time = 50;
 
 // Steps, Step times and step delays for
 const int steps_Wings = 50;
-const int steps_Seats = 50;
+const int steps_Seats = 1213;
 const int stepTime_Wings = 1500; //Microseconds
 const int stepDelay_Wings = 100; //Milliseconds
 const int stepTime_Seats = 8000; // Microseconds
@@ -121,7 +121,7 @@ PID PID_DC3(&w_is[2], &PID_Out_DC[2], &w_should[2], Kp_DC, Ki_DC, Kd_DC, DIRECT)
 PID PID_DC4(&w_is[3], &PID_Out_DC[3], &w_should[3], Kp_DC, Ki_DC, Kd_DC, DIRECT);
 
 // Create PID for position Control
-double Kp_Pose_xy = 2.5, Ki_Pose_xy = 0.5, Kd_Pose_xy = 0;
+double Kp_Pose_xy = 2, Ki_Pose_xy = 1, Kd_Pose_xy = 0;
 PID PID_x(&Robot_Pose.globalPose[0], &v[0], &Robot_Pose.globalPose_should[0], Kp_Pose_xy, Ki_Pose_xy, Kd_Pose_xy, DIRECT);
 PID PID_y(&Robot_Pose.globalPose[1], &v[1], &Robot_Pose.globalPose_should[1], Kp_DC, Ki_DC, Kd_DC, DIRECT);
 double Kp_Pose_th = 1, Ki_Pose_th = 1, Kd_Pose_th = 0;

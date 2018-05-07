@@ -63,13 +63,21 @@ public class foldingController extends AppCompatActivity implements View.OnClick
         btnFoldDownRight.setOnClickListener(this);
 
         Log.d("STATE", "2?");
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("S|2|0|0!".getBytes());
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+        Log.d("STATE", "2");
     }
 
     @Override
     protected void onDestroy() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("S|2|0|0!".getBytes());
+                btSocket.getOutputStream().write("S|0|0|0!".getBytes());
             } catch (IOException e) {
                 toastMsg("Error");
             }

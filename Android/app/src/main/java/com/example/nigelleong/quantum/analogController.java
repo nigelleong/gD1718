@@ -81,6 +81,10 @@ public class analogController extends AppCompatActivity implements View.OnClickL
             public void onMove(int angle, int strength) {
                 Rot_Speed = -strength*Math.cos(angle*Math.PI/180);
                 txtRotation.setText(Math.round(Rot_Speed) + "%");
+                if (Rot_Speed == 0) {
+                    updateBrake = true;
+                    toastMsg("Stopped");
+                }
                 send_Speeds();
             }
         });
