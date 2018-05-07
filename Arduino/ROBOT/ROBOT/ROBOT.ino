@@ -473,8 +473,7 @@ void loop() {
             // Calculate desired wheels speeds WITH SIGN
             SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
             // Desired wheel speeds WITHOUT SIGN (needed for PID controller
-            SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);   
-            Serial.println(w_should[0]);         
+            SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);          
             localize_Robot();  
             if(!DC_STOP){// Compute PID results for DC motors and run DC motors
               run_DC();
