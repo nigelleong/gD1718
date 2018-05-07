@@ -20,8 +20,8 @@
 const float pi = 3.14159265359;
 
 // Dimensions of Robot
-float l_x = 225.5;
-float l_y = 217.5;
+float l_x = 227.5;
+float l_y = 225;
 float R = 30;
 
 // Dimenstions of operation area:
@@ -358,10 +358,7 @@ void loop() {
           //driving for drive_time milliseconds
           localize_Robot();
           while(millis()-time<drive_time){
-            localize_Robot();
-            Serial.println(arg3);
-            Serial.println(v[2]);
-              Serial.println(w_should[0]);          
+            localize_Robot();         
             if(!DC_STOP){// Compute PID results for DC motors and run DC motors
               run_DC(); 
             }

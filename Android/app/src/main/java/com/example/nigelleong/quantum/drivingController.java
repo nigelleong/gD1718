@@ -133,7 +133,7 @@ public class drivingController extends AppCompatActivity implements View.OnClick
         if (btSocket!=null) {
             try {
 //                btSocket.getOutputStream().write("M|2000|2000|90!".getBytes());
-                btSocket.getOutputStream().write("M|0|0|-50!".getBytes());
+                btSocket.getOutputStream().write("M|0|0|-10!".getBytes());
                 toastMsg("Command 'turn clockwise' sent");
             } catch (IOException e) {
                 toastMsg("Error");
@@ -144,7 +144,7 @@ public class drivingController extends AppCompatActivity implements View.OnClick
         if (btSocket!=null) {
             try {
 //                btSocket.getOutputStream().write("M|2000|2000|90!".getBytes());
-                btSocket.getOutputStream().write("M|0|0|50!".getBytes());
+                btSocket.getOutputStream().write("M|0|0|10!".getBytes());
                 toastMsg("Command 'turn counter clockwise' sent");
             } catch (IOException e) {
                 toastMsg("Error");
