@@ -40,10 +40,10 @@ const float counts_per_round = 0.5*3591.84;
 const int PID_sample_time = 50;
 
 // Steps, Step times and step delays for
-const int steps_Wings = 50;
+const int steps_Wings = 50*51;
 const int steps_Seats = 1213;
-const int stepTime_Wings = 1500; //Microseconds
-const int stepDelay_Wings = 100; //Milliseconds
+const int stepTime_Wings = 8000; //Microseconds
+const int stepDelay_Wings = 1; //Milliseconds
 const int stepTime_Seats = 8000; // Microseconds
 const int stepDelay_Seats = 1; // Milliseconds
 
@@ -801,7 +801,7 @@ void change_state(int arg1){
     }
     case 3: 
     {
-      change_loc_method(0);
+      change_loc_method(1);
       break;
     }      
     case 4: 
