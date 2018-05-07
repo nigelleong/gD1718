@@ -1,67 +1,96 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <!--<Button-->
-        <!--android:id="@+id/btn_analog_standby"-->
-        <!--android:layout_width="wrap_content"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:layout_alignParentStart="true"-->
-        <!--android:layout_alignParentTop="true"-->
-        <!--android:layout_marginStart="89dp"-->
-        <!--android:layout_marginTop="174dp"-->
-        <!--android:text="Standby" />-->
+    <!--android:id="@+id/btn_analog_standby"-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:layout_alignParentStart="true"-->
+    <!--android:layout_alignParentTop="true"-->
+    <!--android:layout_marginStart="89dp"-->
+    <!--android:layout_marginTop="174dp"-->
+    <!--android:text="Standby" />-->
 
-    <io.github.controlwear.virtual.joystick.android.JoystickView
-        xmlns:custom="http://schemas.android.com/apk/res-auto"
-        android:id="@+id/joystick"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+    <io.github.controlwear.virtual.joystick.android.JoystickView xmlns:custom="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/joystick_left"
+        android:layout_width="267dp"
+        android:layout_height="266dp"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:layout_marginTop="64dp"
-        custom:JV_borderWidth="8dp"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="31dp"
         custom:JV_backgroundColor="#DEDEDE"
         custom:JV_borderColor="#ADADAD"
-        custom:JV_buttonColor="#00796B"/>
+        custom:JV_borderWidth="8dp"
+        custom:JV_buttonColor="#00796B" />
+
+    <io.github.controlwear.virtual.joystick.android.JoystickView
+        android:id="@+id/joystick_right"
+        android:layout_width="267dp"
+        android:layout_height="266dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="33dp"
+        app:JV_backgroundColor="#DEDEDE"
+        app:JV_borderColor="#ADADAD"
+        app:JV_borderWidth="8dp"
+        app:JV_buttonColor="#00796B" />
 
     <TextView
-        android:id="@+id/lbl_angle"
+        android:id="@+id/lbl_x_speed"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/joystick"
         android:layout_alignParentStart="true"
-        android:layout_marginBottom="16dp"
-        android:layout_marginStart="41dp"
-        android:text="Angle: " />
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="40dp"
+        android:layout_marginTop="11dp"
+        android:text="X-speed:" />
 
     <TextView
-        android:id="@+id/txt_angleValue"
+        android:id="@+id/txt_x_speed"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/lbl_angle"
-        android:layout_marginStart="17dp"
-        android:layout_toEndOf="@+id/lbl_angle"
+        android:layout_alignStart="@+id/txt_y_speed"
+        android:layout_alignTop="@+id/lbl_x_speed"
         android:text="TextView" />
 
     <TextView
         android:id="@+id/lbl_strength"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/lbl_angle"
-        android:layout_toStartOf="@+id/txt_angleValue"
-        android:text="Strength: " />
+        android:layout_alignParentTop="true"
+        android:layout_alignStart="@+id/lbl_x_speed"
+        android:layout_marginTop="28dp"
+        android:text="Y-speed:" />
 
     <TextView
-        android:id="@+id/txt_strengthValue"
+        android:id="@+id/txt_y_speed"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignEnd="@+id/txt_angleValue"
-        android:layout_below="@+id/lbl_angle"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/lbl_x_speed"
+        android:layout_marginStart="167dp"
+        android:text="TextView" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignTop="@+id/joystick_left"
+        android:layout_marginEnd="221dp"
+        android:text="Rotation:" />
+
+    <TextView
+        android:id="@+id/txt_rotation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignTop="@+id/joystick_left"
+        android:layout_marginEnd="110dp"
         android:text="TextView" />
 
 </RelativeLayout>

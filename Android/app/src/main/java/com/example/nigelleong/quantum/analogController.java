@@ -4,17 +4,17 @@ package com.example.nigelleong.quantum;
  * Created by nigelleong on 28/4/18.
  */
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
 
 import android.bluetooth.BluetoothSocket;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.os.SystemClock;
 
 import java.io.IOException;
 
@@ -24,12 +24,17 @@ public class analogController extends AppCompatActivity implements View.OnClickL
 
     BluetoothSocket btSocket;
     BluetoothSocketHelper bluetoothSocketHelper;
+    SystemClock time;
 
     byte[] buffer = new byte[1024];  // buffer store for the stream
     int bytes; // bytes returned from read()
 
-    private TextView mAngleValue;
-    private TextView mStrengthValue;
+    private TextView txtXspeed;
+    private TextView txtYspeed;
+    private TextView txtRotation;
+
+    private double X_Speed, Y_Speed, Rot_Speed;
+    private long time_prev;
 
 
     @Override
@@ -41,15 +46,35 @@ public class analogController extends AppCompatActivity implements View.OnClickL
         btSocket = bluetoothSocketHelper.getBluetoothSocket();
         Log.d("analogController",btSocket.toString());
 
-        mAngleValue = (TextView) findViewById(R.id.txt_angleValue);
-        mStrengthValue = (TextView) findViewById(R.id.txt_strengthValue);
+        txtXspeed = (TextView) findViewById(R.id.txt_x_speed);
+        txtYspeed = (TextView) findViewById(R.id.txt_y_speed);
+        txtRotation = (TextView) findViewById(R.id.txt_rotation);
+        X_Speed = 0;
+        Y_Speed = 0;
+        Rot_Speed = 0;
 
-        JoystickView joystickLeft = (JoystickView) findViewById(R.id.joystick);
+        time_prev = time.uptimeMillis();
+
+        JoystickView joystickLeft = (JoystickView) findViewById(R.id.joystick_left);
         joystickLeft.setOnMoveListener(new JoystickView.OnMoveListener() {
             @Override
             public void onMove(int angle, int strength) {
-                mAngleValue.setText(angle + "°");
-                mStrengthValue.setText(strength + "%");
+                X_Speed = strength*Math.sin(angle*Math.PI/180);
+                Y_Speed = -strength*Math.cos(angle*Math.PI/180);
+                txtXspeed.setText(Math.round(X_Speed) + "%");
+                txtYspeed.setText(Math.round(Y_Speed) + "%");
+                send_Speeds();
+
+            }
+        });
+
+        JoystickView joystickRight = (JoystickView) findViewById(R.id.joystick_right);
+        joystickRight.setOnMoveListener(new JoystickView.OnMoveListener() {
+            @Override
+            public void onMove(int angle, int strength) {
+                Rot_Speed = -strength*Math.cos(angle*Math.PI/180);
+                txtRotation.setText(Math.round(Rot_Speed) + "%");
+                send_Speeds();
             }
         });
 
@@ -62,6 +87,21 @@ public class analogController extends AppCompatActivity implements View.OnClickL
             }
         }
         Log.d("STATE", "3");
+    }
+
+
+    private void send_Speeds() {
+        if((time.uptimeMillis()-time_prev >50)) {
+            if (btSocket != null) {
+                try {
+                    btSocket.getOutputStream().write(("M|"+Integer.toString((int)X_Speed)+"|"+Integer.toString((int)Y_Speed)+"|"+Integer.toString((int)Rot_Speed)+"!").getBytes());
+                    //toastMsg("Sending velocities");
+                } catch (IOException e) {
+                    toastMsg("Error");
+                }
+            }
+            time_prev = time.uptimeMillis();
+        }
     }
 
     @Override

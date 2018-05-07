@@ -6,6 +6,8 @@ package com.example.nigelleong.quantum;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.design.widget.TextInputEditText;
+import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
@@ -24,7 +26,8 @@ import java.util.UUID;
 
 public class standbyController extends AppCompatActivity implements View.OnClickListener {
 
-    Button btnDriving, btnFolding, btnAnalog, btnLayouts, btnPID;
+    Button btnDriving, btnFolding, btnAnalog, btnLayouts, btnPID, btnSubmitPose;
+    TextInputEditText inputPose;
 
     BluetoothSocket btSocket = null;
     BluetoothSocketHelper bluetoothSocketHelper;
@@ -48,12 +51,16 @@ public class standbyController extends AppCompatActivity implements View.OnClick
         btnAnalog = (Button)findViewById(R.id.btn_analog);
         btnLayouts = (Button)findViewById(R.id.btn_layouts);
         btnPID = (Button)findViewById(R.id.btn_PID);
+        btnSubmitPose = (Button) findViewById(R.id.btn_submit_pose);
+
+        inputPose = (TextInputEditText) findViewById(R.id.wrp_input_pose);
 
         btnDriving.setOnClickListener(this);
         btnFolding.setOnClickListener(this);
         btnAnalog.setOnClickListener(this);
         btnLayouts.setOnClickListener(this);
         btnPID.setOnClickListener(this);
+        btnSubmitPose.setOnClickListener(this);
 
         //Switch to STANDBY (state = 0);
         if (btSocket != null) {
@@ -70,6 +77,13 @@ public class standbyController extends AppCompatActivity implements View.OnClick
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.btn_driving:
+                if (btSocket != null) {
+                    try {
+                        btSocket.getOutputStream().write("S|1|0|0!".getBytes());
+                    } catch (IOException e) {
+                        toastMsg("Error");
+                    }
+                }
                 Intent drivingIntent = new Intent(standbyController.this, drivingController.class);
                 startActivity(drivingIntent);
                 break;
@@ -88,6 +102,15 @@ public class standbyController extends AppCompatActivity implements View.OnClick
             case R.id.btn_PID:
                 Intent PIDIntent = new Intent(standbyController.this, PIDController.class);
                 startActivity(PIDIntent);
+                break;
+            case R.id.btn_submit_pose:
+                if (btSocket != null) {
+                    try {
+                        btSocket.getOutputStream().write(inputPose.toString().getBytes());
+                    } catch (IOException e) {
+                        toastMsg("Error");
+                    }
+                }
                 break;
             default:
                 break;

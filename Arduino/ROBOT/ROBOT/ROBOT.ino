@@ -15,57 +15,14 @@
 #endif
 #include <KalmanFus.h>
 #include <discreteKalman.h>
+#include <PinAllocation.h>
+
 const float pi = 3.14159265359;
-
-
-// Pins for RFID Reader
-const int SDA_PIN = 53;
-const int RST_PIN = 5;
-// SCK to 52; MOSI to 51; MISO to 50; 
-
-// Bluetooth connection pins 5V TXD to 10 and RXD to 11
-SoftwareSerial BT(10, 11); 
-
-// Define pins for DC-motors
-const int DC_M1_Dir = 22;
-const int DC_M2_Dir = 24;
-const int DC_M3_Dir = 26;
-const int DC_M4_Dir = 28;
-const int DC_M1_Speed = 8;
-const int DC_M2_Speed = 9;
-const int DC_M3_Speed = 12;
-const int DC_M4_Speed = 13;
-
-// Define pins for stepper motors
-/* direction pins: 
- *  HIGH: open wing and fold seat upwards
- *  LOW: close wing and fold seat downward 
- */
-const int sleep_Stepper = 43;
-const int Wing_R_dir = 25;
-const int Wing_L_dir = 29;
-const int Seat_R_dir = 33;
-const int Seat_M_dir = 37;
-const int Seat_L_dir = 41;
-const int Wing_R_step = 23;
-const int Wing_L_step = 27;
-const int Seat_R_step = 31;
-const int Seat_M_step = 35;
-const int Seat_L_step = 39;
-
-// Pin to deactivate magnets
-const int magnets = 45;
-
-// Encoders
-const int Encoder_1_pin = 2;
-const int Encoder_2_pin = 3;
-const int Encoder_3_pin = 18;
-const int Encoder_4_pin = 19;
 
 // Dimensions of Robot
 float l_x = 225.5;
 float l_y = 217.5;
-float R = 60;
+float R = 30;
 
 // Dimenstions of operation area:
 float area_x = 1250;
@@ -171,9 +128,11 @@ double Kp_Pose_th = 1, Ki_Pose_th = 1, Kd_Pose_th = 0;
 PID PID_theta(&Robot_Pose.globalPose[2], &v[2], &Robot_Pose.globalPose_should[2], Kp_DC, Ki_DC, Kd_DC, DIRECT);
 
 // Maximal Speeds in mm/s and rad/s
-const double v_max_x = 150;
-const double v_max_y = 150;
+const double v_max_x = 200;
+const double v_max_y = 200;
 const double v_max_theta = 1;
+// Arguments from remote control can either be in local frame or global frame:
+bool remote_local = true;
 // Distances/angle at which PID takes over
 const double PID_dis_x = 100;
 const double PID_dis_y = 100;
@@ -183,6 +142,7 @@ const float Pose_error_xy = 5;
 const float Pose_error_theta = 0.04;
 
 bool print_to_COM = true; //Print data da serial port (computer)
+bool print_commands = true;
 
 // States of the robot
 int state;
@@ -467,6 +427,8 @@ void loop() {
         }
         case 'M': //Moving with velocities defined by arg1-3 for a certain time
         {
+          DC_STOP = false;
+          print_commands = false;
           if(layout!=0){
             if(print_to_COM){
               Serial.println("Bevore moving change into privacy/moving configuration!!");
@@ -490,12 +452,20 @@ void loop() {
           time_prev = millis();
 		      time_prev_IMU = millis();
           localize_Robot();
-          while(command!='M'){
+          while(command=='M'){
             read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);
-            // Calculations of wheel speeds
-            v[0] = arg1;
-            v[1] = arg2;
-            v[2] = arg3;
+            if(remote_local){  
+              // Calculations of wheel speeds (speeds are local)
+              v[0] = v_max_x*arg1/100;
+              v[1] = v_max_y*arg2/100;
+              v[2] = v_max_theta*arg3/100;
+            }
+            else{ // if speeds are from a global perspective
+              Robot_Pose.speed_to_local_v((float*)v, (float)arg1/100, (float)arg2/100, (float)arg3/100);
+            }            
+            arg1 = 0;
+            arg2 = 0; 
+            arg3 = 0;
             if(v[0]==0&&v[1]==0&&v[2]==0){
               DC_STOP = allWheelsSTOP();
               break;
@@ -503,12 +473,13 @@ void loop() {
             // Calculate desired wheels speeds WITH SIGN
             SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
             // Desired wheel speeds WITHOUT SIGN (needed for PID controller
-            SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);            
-            localize_Robot();          
+            SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);   
+            Serial.println(w_should[0]);         
+            localize_Robot();  
             if(!DC_STOP){// Compute PID results for DC motors and run DC motors
               run_DC();
-            }          
-          } 
+            }         
+          }
           localize_Robot();         
           break;
         }
@@ -516,7 +487,23 @@ void loop() {
       }
       break;
     }
-
+    ////////////////////////////////////////////////////////////
+    // Layouts //////////////////////////////////////////
+    ////////////////////////////////////////////////////////////
+    case 4:
+    {
+      // Waiting for commands
+      read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);
+      //First character of command
+      switch(command){
+        case 'S': //'S'= switch -> switch to state defined in arg1 (see above)
+        {
+          change_state(arg1);
+          break;
+        } 
+      }
+      break;
+    }
     ////////////////////////////////////////////////////////////
     // PID POSITION CONTROL ////////////////////////////////////
     ////////////////////////////////////////////////////////////
@@ -628,7 +615,8 @@ void loop() {
     default: 
     {
       if(print_to_COM){
-        Serial.println("ERROR: No state selected");
+        Serial.print("ERROR: No state selected. Variable state = ");
+        Serial.println(state);
       }
       read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);
       break;
@@ -707,7 +695,7 @@ void read_BT_command(char* command_buffer, char *command, int *arg1, int *arg2, 
   }
   *arg3 *= sign;
     //Check/print command:
-  if(print_to_COM){
+  if(print_commands){
     Serial.print("Command Buffer: ");
     Serial.println(command_buffer);
     Serial.print("Command: ");

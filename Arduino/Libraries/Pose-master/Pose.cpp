@@ -75,3 +75,8 @@ void Pose::calctoGo_local(){
 	toGo_global[2] = globalPose_should[2] - globalPose[2];
 	Matrix.Multiply((float*) Trafo_inv, (float*) toGo_global, 3, 3, 1, (float*) toGo_local );
 }
+
+void Pose::speed_to_local_v(float * v, float x_global, float y_global, float w_global){
+	float v_global[3] = {x_global, y_global, w_global};
+	Matrix.Multiply((float*)Trafo_inv, (float*)v_global, 3, 3, 1, (float*)v);
+}

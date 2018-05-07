@@ -7,20 +7,140 @@
     android:layout_height="match_parent">
 
     <Button
-        android:id="@+id/btn_foldWings"
+        android:id="@+id/btn_open_wing_left"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignEnd="@+id/btn_foldSeats"
-        android:layout_alignParentTop="true"
-        android:layout_marginTop="216dp"
-        android:text="Fold Wings" />
+        android:layout_alignParentStart="true"
+        android:layout_alignTop="@+id/btn_open_wing_right"
+        android:layout_marginStart="24dp"
+        android:text="Left" />
 
     <Button
-        android:id="@+id/btn_foldSeats"
+        android:id="@+id/btn_seat_left_up"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/btn_foldWings"
+        android:layout_alignParentBottom="true"
+        android:layout_alignStart="@+id/btn_open_wing_left"
+        android:layout_marginBottom="255dp"
+        android:text="Left" />
+
+    <Button
+        android:id="@+id/btn_open_wing_right"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignTop="@+id/btn_open_wing_both"
+        android:layout_marginEnd="23dp"
+        android:text="Right" />
+
+    <Button
+        android:id="@+id/btn_open_wing_both"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="66dp"
-        android:text="Fold Seats" />
+        android:layout_marginTop="40dp"
+        android:text="Both" />
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="14dp"
+        android:text="Open Wings" />
+
+    <TextView
+        android:id="@+id/textView4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="99dp"
+        android:text="Close Wings" />
+
+    <Button
+        android:id="@+id/btn_close_wing_left"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/btn_open_wing_left"
+        android:layout_alignTop="@+id/btn_close_wing_both"
+        android:text="Left" />
+
+    <Button
+        android:id="@+id/btn_close_wing_both"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="128dp"
+        android:text="Both" />
+
+    <Button
+        android:id="@+id/btn_close_wing_right"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/btn_open_wing_right"
+        android:layout_alignTop="@+id/btn_close_wing_both"
+        android:text="Right" />
+
+    <TextView
+        android:id="@+id/textView5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="255dp"
+        android:text="Fold upwards" />
+
+    <Button
+        android:id="@+id/btn_seat_middle_up"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/btn_seat_left_up"
+        android:layout_centerHorizontal="true"
+        android:text="Middle" />
+
+    <Button
+        android:id="@+id/btn_seat_right_up"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/btn_open_wing_right"
+        android:layout_alignTop="@+id/btn_seat_left_up"
+        android:text="Right" />
+
+    <Button
+        android:id="@+id/btn_seat_left_down"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignStart="@+id/btn_open_wing_left"
+        android:layout_marginBottom="147dp"
+        android:text="Left" />
+
+    <TextView
+        android:id="@+id/textView6"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="211dp"
+        android:text="Fold downwards" />
+
+    <Button
+        android:id="@+id/btn_seat_middle_down"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/btn_seat_left_down"
+        android:layout_centerHorizontal="true"
+        android:text="Middle" />
+
+    <Button
+        android:id="@+id/btn_seat_right_down"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/btn_open_wing_right"
+        android:layout_alignTop="@+id/btn_seat_left_down"
+        android:text="Right" />
 </RelativeLayout>

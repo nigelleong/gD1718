@@ -44,9 +44,7 @@
         android:id="@+id/btn_layouts"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="176dp"
+        android:layout_centerInParent="true"
         android:text="Layouts" />
 
     <Button
@@ -55,8 +53,30 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="84dp"
+        android:layout_marginBottom="199dp"
         android:text="PID Position Control" />
+
+    <android.support.design.widget.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginBottom="79dp">
+
+        <Button
+            android:id="@+id/btn_submit_pose"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Submit" />
+
+        <android.support.design.widget.TextInputEditText
+            android:id="@+id/wrp_input_pose"
+            android:layout_width="209dp"
+            android:layout_height="wrap_content"/>
+            android:hint="Type: P|x|y|angle!"/>
+
+    </android.support.design.widget.TextInputLayout>
 
 
 </RelativeLayout>

@@ -33,8 +33,8 @@ public class foldingController extends AppCompatActivity implements View.OnClick
         btSocket = bluetoothSocketHelper.getBluetoothSocket();
         Log.d("foldingController",btSocket.toString());
 
-        btnFoldSeats = (Button)findViewById(R.id.btn_foldSeats);
-        btnFoldWings = (Button)findViewById(R.id.btn_foldWings);
+        //btnFoldSeats = (Button)findViewById(R.id.btn_foldSeats);
+        //btnFoldWings = (Button)findViewById(R.id.btn_foldWings);
 
         btnFoldSeats.setOnClickListener(this);
         btnFoldWings.setOnClickListener(this);
@@ -58,12 +58,9 @@ public class foldingController extends AppCompatActivity implements View.OnClick
     @Override
     public void onClick(View view) {
         switch(view.getId()) {
-            case R.id.btn_foldSeats:
-                foldSeats();
-                break;
-            case R.id.btn_foldWings:
-                robotWings();
-                break;
+            //case R.id.btn_foldWings:
+             //   robotWings();
+             //   break;
             default:
                 break;
         }
