@@ -64,7 +64,6 @@ public class analogController extends AppCompatActivity implements View.OnClickL
                 txtXspeed.setText(Math.round(X_Speed) + "%");
                 txtYspeed.setText(Math.round(Y_Speed) + "%");
                 send_Speeds();
-
             }
         });
 
