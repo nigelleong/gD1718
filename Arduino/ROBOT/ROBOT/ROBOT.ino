@@ -35,7 +35,7 @@ const float translation = 74.831;
 const int encoder_frequency = 50;
 const int IMU_frequency = 100;
 // Encoder counts per round
-const float counts_per_round = 3591.84;
+const float counts_per_round = 0.5*3591.84;
 // PID sample time
 const int PID_sample_time = 50;
 
@@ -114,7 +114,7 @@ double w_is_sign[4]; // measured rotational wheel speeds WITH SIGN
 
 // Create PID for DC motors // Output limit is 0-255 by default
 double PID_Out_DC[4]; //Output of PID controler
-double Kp_DC = 10, Ki_DC = 90, Kd_DC = 0;
+double Kp_DC = 5, Ki_DC = 100, Kd_DC = 0;
 PID PID_DC1(&w_is[0], &PID_Out_DC[0], &w_should[0], Kp_DC, Ki_DC, Kd_DC, DIRECT);
 PID PID_DC2(&w_is[1], &PID_Out_DC[1], &w_should[1], Kp_DC, Ki_DC, Kd_DC, DIRECT);
 PID PID_DC3(&w_is[2], &PID_Out_DC[2], &w_should[2], Kp_DC, Ki_DC, Kd_DC, DIRECT);
@@ -132,7 +132,7 @@ const double v_max_x = 200;
 const double v_max_y = 200;
 const double v_max_theta = 1;
 // Arguments from remote control can either be in local frame or global frame:
-bool remote_local = true;
+bool remote_local = false;
 // Distances/angle at which PID takes over
 const double PID_dis_x = 100;
 const double PID_dis_y = 100;
@@ -461,7 +461,7 @@ void loop() {
               v[2] = v_max_theta*arg3/100;
             }
             else{ // if speeds are from a global perspective
-              Robot_Pose.speed_to_local_v((float*)v, (float)arg1/100, (float)arg2/100, (float)arg3/100);
+              Robot_Pose.speed_to_local_v((float*)v, v_max_y*arg1/100, v_max_y*arg2/100, v_max_theta*arg3/100);
             }            
             arg1 = 0;
             arg2 = 0; 
@@ -479,6 +479,7 @@ void loop() {
               run_DC();
             }         
           }
+          Serial.println(v[0]);
           localize_Robot();         
           break;
         }
@@ -556,10 +557,13 @@ void loop() {
           mpu.resetFIFO();
           get_IMU_yaw();
           yaw_prev = ypr[0];
-
           // Calculated distance to go in local system         
           Robot_Pose.calctoGo_local();
-          while(abs(Robot_Pose.toGo_local[0])>Pose_error_xy || abs(Robot_Pose.toGo_local[1])>Pose_error_xy || abs(Robot_Pose.toGo_local[2])>Pose_error_theta){
+          time = millis();
+          time_prev = millis();
+          time_prev_IMU = millis();
+          
+          while(abs(Robot_Pose.toGo_local[0])>Pose_error_xy || abs(Robot_Pose.toGo_local[1])>Pose_error_xy || abs(Robot_Pose.toGo_local[2])>Pose_error_theta || millis()-time < 6000){
             if(abs(Robot_Pose.toGo_local[0])<PID_dis_x){
               PID_x.Compute();
             }
@@ -594,8 +598,7 @@ void loop() {
             localize_Robot();
             
             Robot_Pose.calctoGo_local();
-            Serial.println(v[0]);
-            Serial.println(v[1]);
+
 
           }
           DC_STOP = allWheelsSTOP();
