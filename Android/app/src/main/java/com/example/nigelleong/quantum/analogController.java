@@ -36,6 +36,8 @@ public class analogController extends AppCompatActivity implements View.OnClickL
     private double X_Speed, Y_Speed, Rot_Speed;
     private long time_prev;
 
+    private boolean updateBrake;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +57,8 @@ public class analogController extends AppCompatActivity implements View.OnClickL
 
         time_prev = time.uptimeMillis();
 
+        updateBrake = false;
+
         JoystickView joystickLeft = (JoystickView) findViewById(R.id.joystick_left);
         joystickLeft.setOnMoveListener(new JoystickView.OnMoveListener() {
             @Override
@@ -63,6 +67,10 @@ public class analogController extends AppCompatActivity implements View.OnClickL
                 Y_Speed = -strength*Math.cos(angle*Math.PI/180);
                 txtXspeed.setText(Math.round(X_Speed) + "%");
                 txtYspeed.setText(Math.round(Y_Speed) + "%");
+                if (X_Speed == 0 && Y_Speed == 0) {
+                    updateBrake = true;
+                    toastMsg("Stopped");
+                }
                 send_Speeds();
             }
         });
@@ -90,7 +98,7 @@ public class analogController extends AppCompatActivity implements View.OnClickL
 
 
     private void send_Speeds() {
-        if((time.uptimeMillis()-time_prev >50)) {
+        if((time.uptimeMillis()-time_prev >50) || updateBrake) {
             if (btSocket != null) {
                 try {
                     btSocket.getOutputStream().write(("M|"+Integer.toString((int)X_Speed)+"|"+Integer.toString((int)Y_Speed)+"|"+Integer.toString((int)Rot_Speed)+"!").getBytes());
@@ -100,6 +108,7 @@ public class analogController extends AppCompatActivity implements View.OnClickL
                 }
             }
             time_prev = time.uptimeMillis();
+            updateBrake = false;
         }
     }
 
