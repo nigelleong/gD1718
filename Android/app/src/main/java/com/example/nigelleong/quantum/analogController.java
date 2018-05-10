@@ -12,6 +12,7 @@ import android.bluetooth.BluetoothSocket;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.os.SystemClock;
@@ -21,6 +22,8 @@ import java.io.IOException;
 import io.github.controlwear.virtual.joystick.android.JoystickView;
 
 public class analogController extends AppCompatActivity implements View.OnClickListener {
+
+    Button btnOdo, btnOdoIMU;
 
     BluetoothSocket btSocket;
     BluetoothSocketHelper bluetoothSocketHelper;
@@ -47,6 +50,12 @@ public class analogController extends AppCompatActivity implements View.OnClickL
         bluetoothSocketHelper = ((BluetoothSocketHelper) getApplicationContext());
         btSocket = bluetoothSocketHelper.getBluetoothSocket();
         Log.d("analogController",btSocket.toString());
+
+        btnOdo = (Button)findViewById(R.id.btn_odo);
+        btnOdoIMU = (Button)findViewById(R.id.btn_odo_imu);
+
+        btnOdo.setOnClickListener(this);
+        btnOdoIMU.setOnClickListener(this);
 
         txtXspeed = (TextView) findViewById(R.id.txt_x_speed);
         txtYspeed = (TextView) findViewById(R.id.txt_y_speed);
@@ -89,6 +98,7 @@ public class analogController extends AppCompatActivity implements View.OnClickL
             }
         });
 
+
         //Switch to Analog remote control (state = 3);
         if (btSocket!=null) {
             try {
@@ -100,7 +110,18 @@ public class analogController extends AppCompatActivity implements View.OnClickL
         Log.d("STATE", "3");
     }
 
-
+    public void onClick(View view) {
+        switch(view.getId()) {
+            case R.id.btn_odo:
+                setToOdo();
+                break;
+            case R.id.btn_odo_imu:
+                setToOdoIMU();
+                break;
+            default:
+                break;
+        }
+    }
     private void send_Speeds() {
         if((time.uptimeMillis()-time_prev >50) || updateBrake) {
             if (btSocket != null) {
@@ -113,6 +134,27 @@ public class analogController extends AppCompatActivity implements View.OnClickL
             }
             time_prev = time.uptimeMillis();
             updateBrake = false;
+        }
+    }
+    private void setToOdo() {
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("L|0|0|0!".getBytes());
+                toastMsg("Localization method: odometry");
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+    }
+
+    private void setToOdoIMU() {
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("L|1|0|0!".getBytes());
+                toastMsg("Localization method: Odometry + IMU");
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
         }
     }
 
@@ -129,17 +171,6 @@ public class analogController extends AppCompatActivity implements View.OnClickL
         super.onDestroy();
     }
 
-    @Override
-    public void onClick(View view) {
-        switch(view.getId()) {
-//            case R.id.btn_analog_standby:
-//                Intent drivingIntent = new Intent(analogController.this, standbyController.class);
-//                startActivity(drivingIntent);
-//                break;
-            default:
-                break;
-        }
-    }
 
     /* Exemple:
     private void setToOdoIMUNFC() {

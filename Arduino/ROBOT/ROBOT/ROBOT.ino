@@ -16,12 +16,14 @@
 #include <KalmanFus.h>
 #include <discreteKalman.h>
 #include <PinAllocation.h>
+//#include <TagAllocation.h>
+
 
 const float pi = 3.14159265359;
 
 // Dimensions of Robot
-float l_x = 227.5;
-float l_y = 225;
+float l_x = 455/2;//227.5;
+float l_y = 455/2;
 float R = 30;
 
 // Dimenstions of operation area:
@@ -33,17 +35,16 @@ float safe_dis = 325; // safety distance to the edge of the stage
 const float translation = 74.831;
 // Encoder sample time in milliseconds (is equal to odometry -> and fusion with IMU)
 const int encoder_frequency = 50;
-const int IMU_frequency = 100;
 // Encoder counts per round
 const float counts_per_round = 0.5*3591.84;
 // PID sample time
 const int PID_sample_time = 50;
 
 // Steps, Step times and step delays for
-const int steps_Wings = 50*51;
-const int steps_Seats = 1213;
-const int stepTime_Wings = 8000; //Microseconds
-const int stepDelay_Wings = 1; //Milliseconds
+const int steps_Wings = 49*51;
+const int steps_Seats = 500; 
+const int stepTime_Wings = 8000; // With gearbox:8000; //Microseconds
+const int stepDelay_Wings = 1; // With gearbox: 1; //Milliseconds
 const int stepTime_Seats = 8000; // Microseconds
 const int stepDelay_Seats = 1; // Milliseconds
 
@@ -59,16 +60,17 @@ uint8_t fifoBuffer[64]; // FIFO storage buffer
 Quaternion q;           // [w, x, y, z]         quaternion container
 VectorFloat gravity;    // [x, y, z]            gravity vector
 float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
-float yaw_prev;         // Previos yaw angle
+float yaw_prev_IMU;         // Previos yaw angle by IMU before one driving part
+float yaw_prev_Robot;       // Previous yaw angle of Robot before one driving part
 
 // Create RFID reader object
 MFRC522 mfrc522(SDA_PIN, RST_PIN);  // Create MFRC522 instance
 MFRC522::StatusCode status; //variable to get card status
 
 // RFID variables
-byte buffer[18];  //data transfer buffer (16+2 bytes data+CRC)
-byte buffer_size;
-uint8_t pageAddr = 0x06; //read 16 bytes (Page 6,7,8,9)
+char read_buffer[18];  //data transfer buffer (16+2 bytes data+CRC)
+byte read_size = sizeof(read_buffer);
+uint8_t pageAddr = 0x04; //read 16 bytes (page 4,5,6 and 7).
 
 // Create mecanum wheel object
 Mecanum SRTMecanum(l_x, l_y, R);
@@ -101,7 +103,6 @@ Encoder Encoder_4(counts_per_round);
 unsigned long time;
 unsigned long time_prev = 0;
 int time_diff;
-int time_diff_IMU;
 unsigned long time_prev_IMU;
 
 
@@ -121,28 +122,28 @@ PID PID_DC3(&w_is[2], &PID_Out_DC[2], &w_should[2], Kp_DC, Ki_DC, Kd_DC, DIRECT)
 PID PID_DC4(&w_is[3], &PID_Out_DC[3], &w_should[3], Kp_DC, Ki_DC, Kd_DC, DIRECT);
 
 // Create PID for position Control
-double Kp_Pose_xy = 2, Ki_Pose_xy = 1, Kd_Pose_xy = 0;
+double Kp_Pose_xy = 1, Ki_Pose_xy = 0.5, Kd_Pose_xy = 0;
 PID PID_x(&Robot_Pose.globalPose[0], &v[0], &Robot_Pose.globalPose_should[0], Kp_Pose_xy, Ki_Pose_xy, Kd_Pose_xy, DIRECT);
 PID PID_y(&Robot_Pose.globalPose[1], &v[1], &Robot_Pose.globalPose_should[1], Kp_DC, Ki_DC, Kd_DC, DIRECT);
-double Kp_Pose_th = 1, Ki_Pose_th = 1, Kd_Pose_th = 0;
+double Kp_Pose_th = 0.1, Ki_Pose_th = 0.1, Kd_Pose_th = 0;
 PID PID_theta(&Robot_Pose.globalPose[2], &v[2], &Robot_Pose.globalPose_should[2], Kp_DC, Ki_DC, Kd_DC, DIRECT);
 
 // Maximal Speeds in mm/s and rad/s
-const double v_max_x = 200;
-const double v_max_y = 200;
-const double v_max_theta = 1;
+const double v_max_x = 300;
+const double v_max_y = 300;
+const double v_max_theta = 0.6;
 // Arguments from remote control can either be in local frame or global frame:
 bool remote_local = false;
 // Distances/angle at which PID takes over
-const double PID_dis_x = 100;
-const double PID_dis_y = 100;
+const double PID_dis_x = 50;
+const double PID_dis_y = 50;
 const double PID_dis_theta = 1;
 // Allowed Pose Error:
-const float Pose_error_xy = 5;
-const float Pose_error_theta = 0.04;
+const float Pose_error_xy = 0.5;
+const float Pose_error_theta = 0.01;
 
-bool print_to_COM = true; //Print data da serial port (computer)
-bool print_commands = true;
+bool print_to_COM = true;// true; //Print data da serial port (computer)
+bool print_commands = false;
 
 // States of the robot
 int state;
@@ -196,7 +197,7 @@ void setup() {
   // Initialize Bluetooth
   BT.begin(9600);
   // Initialize serial communications with Computer
-  Serial.begin(9600);
+  Serial.begin(38400);
   
   attachInterrupt(digitalPinToInterrupt(Encoder_1_pin), doEncoder_1, CHANGE);
   attachInterrupt(digitalPinToInterrupt(Encoder_2_pin), doEncoder_2, CHANGE);
@@ -257,9 +258,9 @@ void setup() {
   PID_y.SetSampleTime(PID_sample_time);
   PID_theta.SetMode(AUTOMATIC);
   PID_theta.SetSampleTime(PID_sample_time);
-  PID_x.SetOutputLimit(v_max_x, v_max_x);
-  PID_y.SetOutputLimit(-v_max_y, v_max_y);
-  PID_theta.SetOutputLimit(-v_max_theta, v_max_theta);
+  PID_x.SetOutputLimit(-0.5*v_max_x, 0.5*v_max_x);
+  PID_y.SetOutputLimit(-0.5*v_max_y, 0.5*v_max_y);
+  PID_theta.SetOutputLimit(-0.5*v_max_theta, 0.5*v_max_theta);
 }
 
 void loop() {  
@@ -350,7 +351,8 @@ void loop() {
           getEnconderSpeeds(50);
           mpu.resetFIFO();
           get_IMU_yaw();
-          yaw_prev = ypr[0];
+          yaw_prev_IMU = ypr[0];
+          yaw_prev_Robot = Robot_Pose.globalPose[2];
           // Initialize times
           time = millis();
           //time_prev NEEDED for localization: Before starting localization always ste time_prev to millis!!
@@ -447,7 +449,8 @@ void loop() {
           getEnconderSpeeds(50);
           mpu.resetFIFO();
           get_IMU_yaw();
-          yaw_prev = ypr[0];
+          yaw_prev_IMU = ypr[0];
+          yaw_prev_Robot = Robot_Pose.globalPose[2];
           //time_prev NEEDED for localization: Before starting localization always ste time_prev to millis!!
           time_prev = millis();
 		      time_prev_IMU = millis();
@@ -479,7 +482,6 @@ void loop() {
               run_DC();
             }         
           }
-          Serial.println(v[0]);
           localize_Robot();         
           break;
         }
@@ -556,32 +558,32 @@ void loop() {
           getEnconderSpeeds(50);
           mpu.resetFIFO();
           get_IMU_yaw();
-          yaw_prev = ypr[0];
+          yaw_prev_IMU = ypr[0];
           // Calculated distance to go in local system         
           Robot_Pose.calctoGo_local();
           time = millis();
           time_prev = millis();
           time_prev_IMU = millis();
           
-          while(abs(Robot_Pose.toGo_local[0])>Pose_error_xy || abs(Robot_Pose.toGo_local[1])>Pose_error_xy || abs(Robot_Pose.toGo_local[2])>Pose_error_theta || millis()-time < 6000){
+          while((abs(Robot_Pose.toGo_local[0])>Pose_error_xy || abs(Robot_Pose.toGo_local[1])>Pose_error_xy || abs(Robot_Pose.toGo_local[2])>Pose_error_theta) && millis()-time < 20000){
             if(abs(Robot_Pose.toGo_local[0])<PID_dis_x){
               PID_x.Compute();
             }
             else{
-              v[0] = sgn(Robot_Pose.toGo_local[0])*v_max_x;
+              v[0] = 0.5*sgn(Robot_Pose.toGo_local[0])*v_max_x;
             }
             if(abs(Robot_Pose.toGo_local[1])<PID_dis_y){
               PID_y.Compute();
             }
             else{
-              v[1] = sgn(Robot_Pose.toGo_local[1])*v_max_y;
+              v[1] = 0.5*sgn(Robot_Pose.toGo_local[1])*v_max_y;
             }
             if(abs(Robot_Pose.toGo_local[2])<PID_dis_theta){
               PID_theta.Compute();
               
             }
             else{
-              v[2] = sgn(Robot_Pose.toGo_local[2])*v_max_theta;
+              v[2] = 0.5*sgn(Robot_Pose.toGo_local[2])*v_max_theta;
             }
             
             if(v[0]==0&&v[1]==0&&v[2]==0){
@@ -747,7 +749,7 @@ void change_loc_method(int arg1){
       mpu.resetFIFO();
       // read a packet from FIFO of IMU
       get_IMU_yaw();
-      yaw_prev = ypr[0];
+      yaw_prev_IMU = ypr[0];
       break;
       }
   }
@@ -762,14 +764,14 @@ void change_loc_method(int arg1){
       {
         Serial.println("Localization method changed to: ODOMETRY + IMU"); 
         Serial.print("Current yaw-angle: ");
-        Serial.println(yaw_prev);
+        Serial.println(yaw_prev_IMU);
         break;
       }      
       case 2: 
       {
         Serial.println("Localization method changed to: ODOMETRY + IMU + RFID");
         Serial.print("Current yaw-angle: ");
-        Serial.println(yaw_prev); 
+        Serial.println(yaw_prev_IMU); 
         break;
       }            
     }
@@ -801,7 +803,7 @@ void change_state(int arg1){
     }
     case 3: 
     {
-      change_loc_method(1);
+      change_loc_method(2);
       break;
     }      
     case 4: 
@@ -811,7 +813,7 @@ void change_state(int arg1){
     }  
     case 5: 
     {
-      change_loc_method(0);
+      change_loc_method(2);
       break;
     }          
   }
@@ -828,7 +830,6 @@ void change_state(int arg1){
         Serial.print("Each movement is: ");
         Serial.print(drive_time);
         Serial.println(" milliseconds long");
-        Serial.println("Default localization method: odometry");
         break;
       }    
       case 2: 
@@ -839,19 +840,16 @@ void change_state(int arg1){
       case 3: 
       {
         Serial.println("State changed to REMOTE CONTROL");
-        Serial.println("Default localization method: odometry");
         break;
       }      
       case 4: 
       {
         Serial.println("State changed to LAYOUT");
-        Serial.println("Default localization method: odometry + IMU + RFID");
         break;
       }  
       case 5: 
       {
         Serial.println("State changed to PID POSITION CONTROL");
-        Serial.println("Default localization method: odometry + IMU + RFID");
          break;
       } 
       default: {Serial.println("Not a valid Mode!!");break;}         
@@ -1041,7 +1039,6 @@ void Init_IMU_RFID(){
 //time_prev NEEDED for localization: Before starting localization always ste time_prev to millis!!
 void localize_Robot(){
   time_diff = millis() - time_prev;
-  time_diff_IMU = millis() - time_prev_IMU;
   // Localization
   if (time_diff > encoder_frequency){ 
     //Calculate wheel speeds 
@@ -1060,20 +1057,15 @@ void localize_Robot(){
       case 1: //odometry + IMU
       case 2: //odometry + IMU + RFID
       {
-		    if(time_diff_IMU > IMU_frequency){
-    			// read a packet from FIFO of IMU
-    			get_IMU_yaw(); //writes to ypr[0];
-    			//new angle according to IMU
-    			Robot_Pose.newAngleIMU(yaw_prev, ypr[0]);
-    			// Claculate new Pose by fusing yaw angle from IMU with odometry data
-    			KalmanOdoIMU.calcNewState((float*)w_is_sign, SRTMecanum, Robot_Pose, time_diff); // time_diff !!! Don't use time_diff_IMU !!!
-          time_prev_IMU = millis();
-    			Robot_Pose.setglobalPose(KalmanOdoIMU.new_State[0], KalmanOdoIMU.new_State[1], KalmanOdoIMU.new_State[2]);
-    			yaw_prev = ypr[0];
-		    }
-    		else {
-    			Robot_Pose.setglobalPose(Robot_Pose.odometryPose[0], Robot_Pose.odometryPose[1], Robot_Pose.odometryPose[2]);
-    		}
+  			// read a packet from FIFO of IMU
+  			get_IMU_yaw(); //writes to ypr[0];
+  			//new angle according to IMU
+  			Robot_Pose.newAngleIMU(yaw_prev_Robot, yaw_prev_IMU, ypr[0]);
+  			// Claculate new Pose by fusing yaw angle from IMU with odometry data
+      
+  			KalmanOdoIMU.calcNewState((float*)w_is_sign, SRTMecanum, Robot_Pose, time_diff); //
+     //  print_P_matrix(); // For debugging Kalman Filter
+  			Robot_Pose.setglobalPose(KalmanOdoIMU.new_State[0], KalmanOdoIMU.new_State[1], KalmanOdoIMU.new_State[2]);
         break;
       }
     }   
@@ -1085,30 +1077,34 @@ void localize_Robot(){
   }
   // Include RFID readings if loc_method==2
   if(loc_method==2){
+    int tag_x = 0;
+    int tag_y = 0;
+    read_size = sizeof(read_buffer);
     // Tag reading
-    buffer_size = sizeof(buffer);
     // Read NFC tag if available
-    if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()){
-      status = (MFRC522::StatusCode) mfrc522.MIFARE_Read(pageAddr, buffer, &buffer_size);
+    if (mfrc522.PICC_IsNewCardPresent()){// && mfrc522.PICC_ReadCardSerial()){
+      status = (MFRC522::StatusCode) mfrc522.MIFARE_Read(pageAddr, read_buffer, &read_size);
       if (status != MFRC522::STATUS_OK) {
         if(print_to_COM){
           Serial.print(F("MIFARE_Read() failed: "));
           Serial.println(mfrc522.GetStatusCodeName(status));
         }
-      }    
-      float tag_x;
-      float tag_y;
-      KalmanNFC.newTagdetected(tag_x, tag_y);
-      if(print_to_COM){
-        Serial.print("Tag: x = ");
-        Serial.print(tag_x);
-        Serial.print("  y = ");
-        Serial.print(tag_y);
-        Serial.println("   detected");
       }
-      KalmanNFC.orientationRobot(Robot_Pose);
-      KalmanNFC.calcNewState(Robot_Pose);
-      Robot_Pose.setglobalPose(KalmanNFC.new_State[0], KalmanNFC.new_State[1], KalmanNFC.new_State[2]);
+      else{
+        read_tag(&tag_x,&tag_y);
+        KalmanNFC.newTagdetected((float)tag_x, (float)tag_y);
+        if(print_to_COM){
+          Serial.print("Tag: x = ");
+          Serial.print(tag_x);
+          Serial.print("  y = ");
+          Serial.print(tag_y);
+          Serial.println("   detected");
+        }
+        KalmanNFC.orientationRobot(Robot_Pose);
+        KalmanNFC.calcNewState(Robot_Pose);
+        debug_Kalman_NFC();
+        Robot_Pose.setglobalPose(KalmanNFC.new_State[0], KalmanNFC.new_State[1], KalmanNFC.new_State[2]);  
+      }
     }
     mfrc522.PICC_HaltA(); 
   }
@@ -1135,6 +1131,7 @@ void Print_Serial_Localization(){
     }
     case 1:
     {
+      //Serial.println(time_diff);
       Serial.print("\t\t");
       Serial.print(Robot_Pose.odometryPose[0]);
       Serial.print("\t");
@@ -1177,3 +1174,168 @@ void Print_Serial_Localization(){
     }
   }
 }
+
+void print_P_matrix(){
+  Serial.println(time_diff, DEC);
+  /*
+  Serial.print("w = ");
+  Serial.print(w_is_sign[0], DEC);
+  Serial.print("\t");
+  Serial.print(w_is_sign[1], DEC);
+  Serial.print("\t");
+  Serial.print(w_is_sign[2], DEC);
+  Serial.print("\t");
+  Serial.println(w_is_sign[3], DEC);
+  
+  Serial.print("Old pose = ");
+  Serial.print(Robot_Pose.globalPose[0], DEC);
+  Serial.print("\t");
+  Serial.print(Robot_Pose.globalPose[1], DEC);
+  Serial.print("\t");
+  Serial.println(Robot_Pose.globalPose[2], DEC);
+
+  Serial.print("Odometry Pose = ");
+  Serial.print(Robot_Pose.odometryPose[0], DEC);
+  Serial.print("\t");
+  Serial.print(Robot_Pose.odometryPose[1], DEC);
+  Serial.print("\t");
+  Serial.println(Robot_Pose.odometryPose[2], DEC);
+  
+  Serial.print("Pose_pred = ");
+  Serial.print(KalmanOdoIMU.Pose_pred[0], DEC);
+  Serial.print("\t");
+  Serial.print(KalmanOdoIMU.Pose_pred[1], DEC);
+  Serial.print("\t");
+  Serial.println(KalmanOdoIMU.Pose_pred[2], DEC);
+
+  Serial.print("z_pred = ");
+  Serial.println(KalmanOdoIMU.z_pred, DEC);
+
+  Serial.print("z_is = ");
+  Serial.println(Robot_Pose.IMU_angle, DEC);
+
+  Serial.println("Jacobi_F = ");
+  Serial.print(KalmanOdoIMU.Jacobi_F[0][0], DEC);
+   Serial.print("\t");
+   Serial.print(KalmanOdoIMU.Jacobi_F[0][1], DEC);
+   Serial.print("\t");
+   Serial.println(KalmanOdoIMU.Jacobi_F[0][2], DEC);
+   Serial.print(KalmanOdoIMU.Jacobi_F[1][0], DEC);
+   Serial.print("\t");
+   Serial.print(KalmanOdoIMU.Jacobi_F[1][1], DEC);
+   Serial.print("\t");
+   Serial.println(KalmanOdoIMU.Jacobi_F[1][2], DEC);
+   Serial.print(KalmanOdoIMU.Jacobi_F[2][0], DEC);
+   Serial.print("\t");
+   Serial.print(KalmanOdoIMU.Jacobi_F[2][1], DEC);
+   Serial.print("\t");
+   Serial.println(KalmanOdoIMU.Jacobi_F[2][2], DEC);
+
+    Serial.println("Jacobi_W = ");
+  Serial.print(KalmanOdoIMU.Jacobi_W[0][0], DEC);
+   Serial.print("\t");
+   Serial.print(KalmanOdoIMU.Jacobi_W[0][1], DEC);
+   Serial.print("\t");
+   Serial.println(KalmanOdoIMU.Jacobi_W[0][2], DEC);
+   Serial.print(KalmanOdoIMU.Jacobi_W[1][0], DEC);
+   Serial.print("\t");
+   Serial.print(KalmanOdoIMU.Jacobi_W[1][1], DEC);
+   Serial.print("\t");
+   Serial.println(KalmanOdoIMU.Jacobi_W[1][2], DEC);
+   Serial.print(KalmanOdoIMU.Jacobi_W[2][0], DEC);
+   Serial.print("\t");
+   Serial.print(KalmanOdoIMU.Jacobi_W[2][1], DEC);
+   Serial.print("\t");
+   Serial.println(KalmanOdoIMU.Jacobi_W[2][2], DEC);
+  
+  Serial.println("P_pred = ");
+  Serial.print(KalmanOdoIMU.P_pred[0][0], DEC);
+   Serial.print("\t");
+   Serial.print(KalmanOdoIMU.P_pred[0][1], DEC);
+   Serial.print("\t");
+   Serial.println(KalmanOdoIMU.P_pred[0][2], DEC);
+   Serial.print(KalmanOdoIMU.P_pred[1][0], DEC);
+   Serial.print("\t");
+   Serial.print(KalmanOdoIMU.P_pred[1][1], DEC);
+   Serial.print("\t");
+   Serial.println(KalmanOdoIMU.P_pred[1][2], DEC);
+   Serial.print(KalmanOdoIMU.P_pred[2][0], DEC);
+   Serial.print("\t");
+   Serial.print(KalmanOdoIMU.P_pred[2][1], DEC);
+   Serial.print("\t");
+   Serial.println(KalmanOdoIMU.P_pred[2][2], DEC);
+      */
+  Serial.println("P = ");
+  Serial.print(KalmanOdoIMU.P[0][0], DEC);
+   Serial.print("\t");
+   Serial.print(KalmanOdoIMU.P[0][1], DEC);
+   Serial.print("\t");
+   Serial.println(KalmanOdoIMU.P[0][2], DEC);
+   Serial.print(KalmanOdoIMU.P[1][0], DEC);
+   Serial.print("\t");
+   Serial.print(KalmanOdoIMU.P[1][1], DEC);
+   Serial.print("\t");
+   Serial.println(KalmanOdoIMU.P[1][2], DEC);
+   Serial.print(KalmanOdoIMU.P[2][0], DEC);
+   Serial.print("\t");
+   Serial.print(KalmanOdoIMU.P[2][1], DEC);
+   Serial.print("\t");
+   Serial.println(KalmanOdoIMU.P[2][2], DEC);
+
+   Serial.print("K-Gain = ");
+   Serial.print(KalmanOdoIMU.Kalman_Gain[0], DEC);
+   Serial.print("\t");
+   Serial.print(KalmanOdoIMU.Kalman_Gain[1], DEC);
+   Serial.print("\t");
+   Serial.println(KalmanOdoIMU.Kalman_Gain[2], DEC);
+/*
+   Serial.print("New_Pose");
+   Serial.print(KalmanOdoIMU.new_State[0], DEC);
+   Serial.print("\t");
+   Serial.print(KalmanOdoIMU.new_State[1], DEC);
+   Serial.print("\t");
+   Serial.println(KalmanOdoIMU.new_State[2], DEC);
+
+   Serial.println("\n");*/   
+}
+
+void read_tag(int * tag_x, int * tag_y){
+  int i= 0;
+  while (read_buffer[i] != '|') {
+    *tag_x *= 10;
+    *tag_x= *tag_x+ (read_buffer[i] - 48);
+    i++;
+  }
+  i++;
+  
+  while (read_buffer[i] != '|') {
+    *tag_y *= 10;
+    *tag_y = *tag_y + (read_buffer[i] - 48);
+    i++;
+  }
+}
+
+void debug_Kalman_NFC(){
+  Serial.print("Robot in Tag Zone = ");
+  Serial.println(KalmanNFC.checkRobotinZone(Robot_Pose));
+
+  Serial.println("Kalman_Gain = ");
+  Serial.print(KalmanNFC.Kalman_Gain[0][0], DEC);
+   Serial.print("\t");
+   Serial.println(KalmanNFC.Kalman_Gain[0][1], DEC);
+
+   Serial.print(KalmanNFC.Kalman_Gain[1][0], DEC);
+   Serial.print("\t");
+   Serial.println(KalmanNFC.Kalman_Gain[1][1], DEC);
+
+   Serial.print(KalmanNFC.Kalman_Gain[2][0], DEC);
+   Serial.print("\t");
+   Serial.println(KalmanNFC.Kalman_Gain[2][1], DEC);
+
+   Serial.print("Correction = ");
+   Serial.print(KalmanNFC.correction[0]);
+   Serial.print("\t");
+   Serial.println(KalmanNFC.correction[1]);
+
+}
+         

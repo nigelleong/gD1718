@@ -26,11 +26,11 @@ discreteKalman::discreteKalman() {
 	P[2][2] = 1;
 	
 	// Covariance tag misplacement: Assuming a misplacement of 5mm
-	R[0][0] = 25;
+	R[0][0] = 0.25;
 	R[0][1] = 0;
 	
 	R[1][0] = 0;
-	R[1][1] = 25;
+	R[1][1] = 0.25;
 	
 	// Sensor Model
 	H[0][0] = 1;
@@ -69,7 +69,7 @@ discreteKalman::discreteKalman() {
 void discreteKalman::orientationRobot(Pose SRT_Pose){
 	double tag_dis[2]; //destances between tags (x and y)
 	double pose_dis[2]; // distances between current estimated pose and previous tag
-	// centre_dists between tags and poses at tags
+	// center_dists between tags and poses at tags
 	for (int i=0;i<2;i++){
 		tag_dis[i] = tag_det[i] - tag_prev[i];
 		pose_dis[i] = SRT_Pose.globalPose[i] - tag_prev[i];
@@ -99,11 +99,10 @@ void discreteKalman::calcNewState(Pose SRT_Pose){
 	}
 	// if the robot is outside the tag zone--> update
 	else{
-		//orientationRobot();
-		float correction[2];
-		//calcKalmanGain();
+				
+		calcKalmanGain();
 		// Sensor prediction is skipped --> global pose is the predicted sensor values
-		Matrix.Multiply((float*) Kalman_Gain, (float*) correction, 3, 2, 1, (float*) correction);
+		Matrix.Multiply((float*) Kalman_Gain, (float*) center_dist, 3, 2, 1, (float*) correction);
 		new_State[0] = SRT_Pose.globalPose[0] + correction[0];
 		new_State[1] = SRT_Pose.globalPose[1] + correction[1];
 		new_State[2] = yaw_est;
@@ -113,9 +112,9 @@ void discreteKalman::calcNewState(Pose SRT_Pose){
 	
 bool discreteKalman::checkRobotinZone(Pose SRT_Pose){
 	for (int i=0;i<2;i++){
-		centre_dist[i] = tag_det[i] - SRT_Pose.globalPose[i];
+		center_dist[i] = tag_det[i] - SRT_Pose.globalPose[i];
 	}
-	if(sqrt(sq(centre_dist[0])+sq(centre_dist[1])<Radius)){
+	if(sqrt(sq(center_dist[0])+sq(center_dist[1])<Radius)){
 		return true;
 	}
 	else return false;

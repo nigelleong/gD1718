@@ -102,10 +102,6 @@ public class drivingController extends AppCompatActivity implements View.OnClick
             case R.id.btn_right:
                 robotGoRight();
                 break;
-//            case R.id.btn_driving_standby:
-//                Intent drivingIntent = new Intent(drivingController.this, standbyController.class);
-//                startActivity(drivingIntent);
-//                break;
             case R.id.btn_clockwise:
                 robotTurnClockwise();
                 break;
@@ -133,7 +129,7 @@ public class drivingController extends AppCompatActivity implements View.OnClick
         if (btSocket!=null) {
             try {
 //                btSocket.getOutputStream().write("M|2000|2000|90!".getBytes());
-                btSocket.getOutputStream().write("M|0|0|-10!".getBytes());
+                btSocket.getOutputStream().write("M|0|0|-50!".getBytes());
                 toastMsg("Command 'turn clockwise' sent");
             } catch (IOException e) {
                 toastMsg("Error");
@@ -144,7 +140,7 @@ public class drivingController extends AppCompatActivity implements View.OnClick
         if (btSocket!=null) {
             try {
 //                btSocket.getOutputStream().write("M|2000|2000|90!".getBytes());
-                btSocket.getOutputStream().write("M|0|0|10!".getBytes());
+                btSocket.getOutputStream().write("M|0|0|50!".getBytes());
                 toastMsg("Command 'turn counter clockwise' sent");
             } catch (IOException e) {
                 toastMsg("Error");

@@ -13,23 +13,23 @@ KalmanFus::KalmanFus() {
 	
 	P[2][0] = 0;
 	P[2][1] = 0;
-	P[2][2] = 1;
+	P[2][2] = 0.0000000884;
 	
 	// Initialize covariance action matrix
-	Q[0][0] = 0.0077;
+	Q[0][0] = 0.01365;
 	Q[0][1] = 0;
 	Q[0][2] = 0;
 	
 	Q[1][0] = 0;
-	Q[1][1] = 0.8208;
+	Q[1][1] = 0.77323;
 	Q[1][2] = 0;
 	
 	Q[2][0] = 0;
 	Q[2][1] = 0;
-	Q[2][2] = 1;
+	Q[2][2] = 0.000001577;
 	
 	// Sensor uncertainty (IMU) sdt^2 -> Varianze
-	Cov_Sensor = 0.00000009330964141451887;
+	Cov_Sensor = 0.0000000933096;//0.0000000933096;
 	
 	// Sensor Model IMU
 	H_IMU[0] = 0;	
@@ -56,11 +56,11 @@ KalmanFus::KalmanFus() {
 void KalmanFus::calcJacobiTransition(float * w_is, Mecanum SRT_Mecanum, Pose SRT_Pose, float delta_time) {
 	Jacobi_F[0][0] = 1;
 	Jacobi_F[0][1] = 0;
-	Jacobi_F[0][2] = delta_time*SRT_Mecanum.R/4*sqrt(2)*(-sin(SRT_Pose.globalPose[2]+pi/4)*w_is[0]+cos(SRT_Pose.globalPose[2]+pi/4)*w_is[1]-sin(SRT_Pose.globalPose[2]+pi/4)*w_is[2]+cos(SRT_Pose.globalPose[2]+pi/4)*w_is[3]);
+	Jacobi_F[0][2] = delta_time/1000*SRT_Mecanum.R/4*sqrt(2)*(-sin(SRT_Pose.globalPose[2]+pi/4)*w_is[0]+cos(SRT_Pose.globalPose[2]+pi/4)*w_is[1]-sin(SRT_Pose.globalPose[2]+pi/4)*w_is[2]+cos(SRT_Pose.globalPose[2]+pi/4)*w_is[3]);
 	
 	Jacobi_F[1][0] = 0;
 	Jacobi_F[1][1] = 1;
-	Jacobi_F[1][2] = delta_time*SRT_Mecanum.R/4*sqrt(2)*(cos(SRT_Pose.globalPose[2]+pi/4)*w_is[0]+sin(SRT_Pose.globalPose[2]+pi/4)*w_is[1]+cos(SRT_Pose.globalPose[2]+pi/4)*w_is[2]+sin(SRT_Pose.globalPose[2]+pi/4)*w_is[3]);
+	Jacobi_F[1][2] = delta_time/1000*SRT_Mecanum.R/4*sqrt(2)*(cos(SRT_Pose.globalPose[2]+pi/4)*w_is[0]+sin(SRT_Pose.globalPose[2]+pi/4)*w_is[1]+cos(SRT_Pose.globalPose[2]+pi/4)*w_is[2]+sin(SRT_Pose.globalPose[2]+pi/4)*w_is[3]);
 	
 	Jacobi_F[2][0] = 0;
 	Jacobi_F[2][1] = 0;
@@ -89,8 +89,7 @@ void KalmanFus::calcJacobiAction(Pose SRT_Pose){
 
 // x = f(x,u)
 // Predict new state: w needed to correct sign of w_is (w_is has no sign)
-void KalmanFus::predictNewState(float * w_is, Mecanum SRT_Mecanum, Pose SRT_Pose, float delta_time) {
-	SRT_Pose.newPoseOdometry(w_is, SRT_Mecanum, delta_time );
+void KalmanFus::predictNewState(Pose SRT_Pose) {// new state is already calculated for odometry
 	Pose_pred[0] = SRT_Pose.odometryPose[0];
 	Pose_pred[1] = SRT_Pose.odometryPose[1];
 	Pose_pred[2] = SRT_Pose.odometryPose[2];
@@ -131,11 +130,11 @@ void KalmanFus::predictSensor(float z) {
 }
 
 // Calculate new estimated pose (fused odometry and IMU data)
-void KalmanFus::calcNewState(float * w_is, Mecanum SRT_Mecanum, Pose SRT_Pose, float delta_time) {
+void KalmanFus::calcNewState(float * w_is_sign, Mecanum SRT_Mecanum, Pose SRT_Pose, float delta_time) {
 	float Gain_Difference_Product[3];
-	calcJacobiTransition(w_is , SRT_Mecanum, SRT_Pose, delta_time);
+	calcJacobiTransition(w_is_sign , SRT_Mecanum, SRT_Pose, delta_time);
 	calcJacobiAction(SRT_Pose);
-	predictNewState(w_is, SRT_Mecanum, SRT_Pose, delta_time);
+	predictNewState(SRT_Pose);
 	predictErrorModel();
 	calcKalmanGain();
 	updateErrorModel();

@@ -75,6 +75,11 @@
 #ifndef MFRC522_h
 #define MFRC522_h
 
+#include "require_cpp11.h"
+#include "deprecated.h"
+// Enable integer limits
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
 #include <Arduino.h>
 #include <SPI.h>
 
@@ -83,7 +88,7 @@
 // Hint: if needed, you can remove unused self-test data to save flash memory
 //
 // Version 0.0 (0x90)
-// Philips Semiconductors; Preliminary Specification Revision 2.0 - 01 August 2005; 16.1 Sefttest
+// Philips Semiconductors; Preliminary Specification Revision 2.0 - 01 August 2005; 16.1 self-test
 const byte MFRC522_firmware_referenceV0_0[] PROGMEM = {
 	0x00, 0x87, 0x98, 0x0f, 0x49, 0xFF, 0x07, 0x19,
 	0xBF, 0x22, 0x30, 0x49, 0x59, 0x63, 0xAD, 0xCA,
@@ -95,7 +100,7 @@ const byte MFRC522_firmware_referenceV0_0[] PROGMEM = {
 	0x35, 0x96, 0x98, 0x9E, 0x4F, 0x30, 0x32, 0x8D
 };
 // Version 1.0 (0x91)
-// NXP Semiconductors; Rev. 3.8 - 17 September 2014; 16.1.1 Self test
+// NXP Semiconductors; Rev. 3.8 - 17 September 2014; 16.1.1 self-test
 const byte MFRC522_firmware_referenceV1_0[] PROGMEM = {
 	0x00, 0xC6, 0x37, 0xD5, 0x32, 0xB7, 0x57, 0x5C,
 	0xC2, 0xD8, 0x7C, 0x4D, 0xD9, 0x70, 0xC7, 0x73,
@@ -107,7 +112,7 @@ const byte MFRC522_firmware_referenceV1_0[] PROGMEM = {
 	0xD9, 0x0F, 0xB5, 0x5E, 0x25, 0x1D, 0x29, 0x79
 };
 // Version 2.0 (0x92)
-// NXP Semiconductors; Rev. 3.8 - 17 September 2014; 16.1.1 Self test
+// NXP Semiconductors; Rev. 3.8 - 17 September 2014; 16.1.1 self-test
 const byte MFRC522_firmware_referenceV2_0[] PROGMEM = {
 	0x00, 0xEB, 0x66, 0xBA, 0x57, 0xBF, 0x23, 0x95,
 	0xD0, 0xE3, 0x0D, 0x3D, 0x27, 0x89, 0x5C, 0xDE,
@@ -133,9 +138,14 @@ const byte FM17522_firmware_reference[] PROGMEM = {
 
 class MFRC522 {
 public:
+	// Size of the MFRC522 FIFO
+	static constexpr byte FIFO_SIZE = 64;		// The FIFO is 64 bytes.
+	// Default value for unused pin
+	static constexpr uint8_t UNUSED_PIN = UINT8_MAX;
+	
 	// MFRC522 registers. Described in chapter 9 of the datasheet.
 	// When using SPI all addresses are shifted one bit left in the "SPI address byte" (section 8.1.2.3)
-	enum PCD_Register {
+	enum PCD_Register : byte {
 		// Page 0: Command and status
 		//						  0x00			// reserved for future use
 		CommandReg				= 0x01 << 1,	// starts and stops command execution
@@ -197,7 +207,7 @@ public:
 		TestPinEnReg			= 0x33 << 1,	// enables pin output driver on pins D1 to D7
 		TestPinValueReg			= 0x34 << 1,	// defines the values for D1 to D7 when it is used as an I/O bus
 		TestBusReg				= 0x35 << 1,	// shows the status of the internal test bus
-		AutoTestReg				= 0x36 << 1,	// controls the digital self test
+		AutoTestReg				= 0x36 << 1,	// controls the digital self-test
 		VersionReg				= 0x37 << 1,	// shows the software version
 		AnalogTestReg			= 0x38 << 1,	// controls the pins AUX1 and AUX2
 		TestDAC1Reg				= 0x39 << 1,	// defines the test value for TestDAC1
@@ -210,11 +220,11 @@ public:
 	};
 	
 	// MFRC522 commands. Described in chapter 10 of the datasheet.
-	enum PCD_Command {
+	enum PCD_Command : byte {
 		PCD_Idle				= 0x00,		// no action, cancels current command execution
 		PCD_Mem					= 0x01,		// stores 25 bytes into the internal buffer
 		PCD_GenerateRandomID	= 0x02,		// generates a 10-byte random ID number
-		PCD_CalcCRC				= 0x03,		// activates the CRC coprocessor or performs a self test
+		PCD_CalcCRC				= 0x03,		// activates the CRC coprocessor or performs a self-test
 		PCD_Transmit			= 0x04,		// transmits data from the FIFO buffer
 		PCD_NoCmdChange			= 0x07,		// no command change, can be used to modify the CommandReg register bits without affecting the command, for example, the PowerDown bit
 		PCD_Receive				= 0x08,		// activates the receiver circuits
@@ -225,7 +235,7 @@ public:
 	
 	// MFRC522 RxGain[2:0] masks, defines the receiver's signal voltage gain factor (on the PCD).
 	// Described in 9.3.3.6 / table 98 of the datasheet at http://www.nxp.com/documents/data_sheet/MFRC522.pdf
-	enum PCD_RxGain {
+	enum PCD_RxGain : byte {
 		RxGain_18dB				= 0x00 << 4,	// 000b - 18 dB, minimum
 		RxGain_23dB				= 0x01 << 4,	// 001b - 23 dB
 		RxGain_18dB_2			= 0x02 << 4,	// 010b - 18 dB, it seems 010b is a duplicate for 000b
@@ -240,7 +250,7 @@ public:
 	};
 	
 	// Commands sent to the PICC.
-	enum PICC_Command {
+	enum PICC_Command : byte {
 		// The commands used by the PCD to manage communication with several PICCs (ISO 14443-3, Type A, section 6.4)
 		PICC_CMD_REQA			= 0x26,		// REQuest command, Type A. Invites PICCs in state IDLE to go to READY and prepare for anticollision or selection. 7 bit frame.
 		PICC_CMD_WUPA			= 0x52,		// Wake-UP command, Type A. Invites PICCs in state IDLE and HALT to go to READY(*) and prepare for anticollision or selection. 7 bit frame.
@@ -249,6 +259,7 @@ public:
 		PICC_CMD_SEL_CL2		= 0x95,		// Anti collision/Select, Cascade Level 2
 		PICC_CMD_SEL_CL3		= 0x97,		// Anti collision/Select, Cascade Level 3
 		PICC_CMD_HLTA			= 0x50,		// HaLT command, Type A. Instructs an ACTIVE PICC to go to state HALT.
+		PICC_CMD_RATS           = 0xE0,     // Request command for Answer To Reset.
 		// The commands used for MIFARE Classic (from http://www.mouser.com/ds/2/302/MF1S503x-89574.pdf, Section 9)
 		// Use PCD_MFAuthent to authenticate access to a sector, then use these commands to read/write/modify the blocks on the sector.
 		// The read/write commands can also be used for MIFARE Ultralight.
@@ -282,6 +293,7 @@ public:
 		PICC_TYPE_MIFARE_4K		,	// MIFARE Classic protocol, 4KB
 		PICC_TYPE_MIFARE_UL		,	// MIFARE Ultralight or Ultralight C
 		PICC_TYPE_MIFARE_PLUS	,	// MIFARE Plus
+		PICC_TYPE_MIFARE_DESFIRE,	// MIFARE DESFire
 		PICC_TYPE_TNP3XXX		,	// Only mentioned in NXP AN 10833 MIFARE Type Identification Procedure
 		PICC_TYPE_NOT_COMPLETE	= 0xff	// SAK indicates UID is not complete.
 	};
@@ -306,34 +318,33 @@ public:
 		byte		uidByte[10];
 		byte		sak;			// The SAK (Select acknowledge) byte returned from the PICC after successful selection.
 	} Uid;
-	
+
 	// A struct used for passing a MIFARE Crypto1 key
 	typedef struct {
 		byte		keyByte[MF_KEY_SIZE];
 	} MIFARE_Key;
 	
 	// Member variables
-	Uid uid;								// Used by PICC_ReadCardSerial().
-	
-	// Size of the MFRC522 FIFO
-	static const byte FIFO_SIZE = 64;		// The FIFO is 64 bytes.
+	Uid uid;	// Used by PICC_ReadCardSerial().
 	
 	/////////////////////////////////////////////////////////////////////////////////////
 	// Functions for setting up the Arduino
 	/////////////////////////////////////////////////////////////////////////////////////
-	MFRC522();
-	MFRC522(byte chipSelectPin, byte resetPowerDownPin);
+	MFRC522(const byte chipSelectPin, const byte resetPowerDownPin,
+			SPIClass *spiClass = &SPI, const SPISettings spiSettings = SPISettings(SPI_CLOCK_DIV4, MSBFIRST, SPI_MODE0))
+			: _chipSelectPin(chipSelectPin), _resetPowerDownPin(resetPowerDownPin),
+			  _spiClass(spiClass), _spiSettings(spiSettings) {};
+	MFRC522() : MFRC522(UNUSED_PIN, UNUSED_PIN) {};
 	
 	/////////////////////////////////////////////////////////////////////////////////////
 	// Basic interface functions for communicating with the MFRC522
 	/////////////////////////////////////////////////////////////////////////////////////
-	void PCD_WriteRegister(byte reg, byte value);
-	void PCD_WriteRegister(byte reg, byte count, byte *values);
-	byte PCD_ReadRegister(byte reg);
-	void PCD_ReadRegister(byte reg, byte count, byte *values, byte rxAlign = 0);
-	void setBitMask(unsigned char reg, unsigned char mask);
-	void PCD_SetRegisterBitMask(byte reg, byte mask);
-	void PCD_ClearRegisterBitMask(byte reg, byte mask);
+	void PCD_WriteRegister(PCD_Register reg, byte value);
+	void PCD_WriteRegister(PCD_Register reg, byte count, byte *values);
+	byte PCD_ReadRegister(PCD_Register reg);
+	void PCD_ReadRegister(PCD_Register reg, byte count, byte *values, byte rxAlign = 0);
+	void PCD_SetRegisterBitMask(PCD_Register reg, byte mask);
+	void PCD_ClearRegisterBitMask(PCD_Register reg, byte mask);
 	StatusCode PCD_CalculateCRC(byte *data, byte length, byte *result);
 	
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -349,16 +360,22 @@ public:
 	bool PCD_PerformSelfTest();
 	
 	/////////////////////////////////////////////////////////////////////////////////////
+	// Power control functions
+	/////////////////////////////////////////////////////////////////////////////////////
+	void PCD_SoftPowerDown();
+	void PCD_SoftPowerUp();
+	
+	/////////////////////////////////////////////////////////////////////////////////////
 	// Functions for communicating with PICCs
 	/////////////////////////////////////////////////////////////////////////////////////
-	StatusCode PCD_TransceiveData(byte *sendData, byte sendLen, byte *backData, byte *backLen, byte *validBits = NULL, byte rxAlign = 0, bool checkCRC = false);
-	StatusCode PCD_CommunicateWithPICC(byte command, byte waitIRq, byte *sendData, byte sendLen, byte *backData = NULL, byte *backLen = NULL, byte *validBits = NULL, byte rxAlign = 0, bool checkCRC = false);
+	StatusCode PCD_TransceiveData(byte *sendData, byte sendLen, byte *backData, byte *backLen, byte *validBits = nullptr, byte rxAlign = 0, bool checkCRC = false);
+	StatusCode PCD_CommunicateWithPICC(byte command, byte waitIRq, byte *sendData, byte sendLen, byte *backData = nullptr, byte *backLen = nullptr, byte *validBits = nullptr, byte rxAlign = 0, bool checkCRC = false);
 	StatusCode PICC_RequestA(byte *bufferATQA, byte *bufferSize);
 	StatusCode PICC_WakeupA(byte *bufferATQA, byte *bufferSize);
 	StatusCode PICC_REQA_or_WUPA(byte command, byte *bufferATQA, byte *bufferSize);
-	StatusCode PICC_Select(Uid *uid, byte validBits = 0);
+	virtual StatusCode PICC_Select(Uid *uid, byte validBits = 0);
 	StatusCode PICC_HaltA();
-	
+
 	/////////////////////////////////////////////////////////////////////////////////////
 	// Functions for communicating with MIFARE PICCs
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -367,24 +384,22 @@ public:
 	StatusCode MIFARE_Read(byte blockAddr, byte *buffer, byte *bufferSize);
 	StatusCode MIFARE_Write(byte blockAddr, byte *buffer, byte bufferSize);
 	StatusCode MIFARE_Ultralight_Write(byte page, byte *buffer, byte bufferSize);
-	StatusCode MIFARE_Decrement(byte blockAddr, long delta);
-	StatusCode MIFARE_Increment(byte blockAddr, long delta);
+	StatusCode MIFARE_Decrement(byte blockAddr, int32_t delta);
+	StatusCode MIFARE_Increment(byte blockAddr, int32_t delta);
 	StatusCode MIFARE_Restore(byte blockAddr);
 	StatusCode MIFARE_Transfer(byte blockAddr);
-	StatusCode MIFARE_GetValue(byte blockAddr, long *value);
-	StatusCode MIFARE_SetValue(byte blockAddr, long value);
+	StatusCode MIFARE_GetValue(byte blockAddr, int32_t *value);
+	StatusCode MIFARE_SetValue(byte blockAddr, int32_t value);
 	StatusCode PCD_NTAG216_AUTH(byte *passWord, byte pACK[]);
 	
 	/////////////////////////////////////////////////////////////////////////////////////
 	// Support functions
 	/////////////////////////////////////////////////////////////////////////////////////
 	StatusCode PCD_MIFARE_Transceive(byte *sendData, byte sendLen, bool acceptTimeout = false);
-	// old function used too much memory, now name moved to flash; if you need char, copy from flash to memory
-	//const char *GetStatusCodeName(byte code);
-	static const __FlashStringHelper *GetStatusCodeName(StatusCode code);
 	static PICC_Type PICC_GetType(byte sak);
-	// old function used too much memory, now name moved to flash; if you need char, copy from flash to memory
-	//const char *PICC_GetTypeName(byte type);
+	
+	// Support functions for debuging - proxy for MFRC522Debug to keep backwarts compatibility
+	static const __FlashStringHelper *GetStatusCodeName(StatusCode code);
 	static const __FlashStringHelper *PICC_GetTypeName(PICC_Type type);
 	
 	// Support functions for debuging
@@ -397,20 +412,24 @@ public:
 	
 	// Advanced functions for MIFARE
 	void MIFARE_SetAccessBits(byte *accessBitBuffer, byte g0, byte g1, byte g2, byte g3);
-	bool MIFARE_OpenUidBackdoor(bool logErrors);
-	bool MIFARE_SetUid(byte *newUid, byte uidSize, bool logErrors);
-	bool MIFARE_UnbrickUidSector(bool logErrors);
 	
 	/////////////////////////////////////////////////////////////////////////////////////
 	// Convenience functions - does not add extra functionality
 	/////////////////////////////////////////////////////////////////////////////////////
-	bool PICC_IsNewCardPresent();
-	bool PICC_ReadCardSerial();
+	virtual bool PICC_IsNewCardPresent();
+	virtual bool PICC_ReadCardSerial();
 	
-private:
+protected:
+	// Pins
 	byte _chipSelectPin;		// Arduino pin connected to MFRC522's SPI slave select input (Pin 24, NSS, active low)
 	byte _resetPowerDownPin;	// Arduino pin connected to MFRC522's reset and power down input (Pin 6, NRSTPD, active low)
-	StatusCode MIFARE_TwoStepHelper(byte command, byte blockAddr, long data);
+	
+	// SPI communication
+	SPIClass *_spiClass;		// SPI class which abstracts hardware.
+	const SPISettings _spiSettings;	// SPI settings.
+	
+	// Functions for communicating with MIFARE PICCs
+	StatusCode MIFARE_TwoStepHelper(byte command, byte blockAddr, int32_t data);
 };
 
 #endif

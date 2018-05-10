@@ -28,7 +28,7 @@ public:
 	void setglobalPose(float, float, float);
 	void setglobalPose_should(float, float, float);
 	void newPoseOdometry(float* , Mecanum, float );
-	void newAngleIMU(float, float);
+	void newAngleIMU(float, float, float);
 	void calctoGo_local();
 	void speed_to_local_v(float*, float, float, float);
 	float toGo_local[3];

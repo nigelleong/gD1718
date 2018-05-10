@@ -56,6 +56,12 @@ void Pose::newPoseOdometry(float * w_is_sign, Mecanum SRT_Mecanum, float delta_t
 	odometryPose[0] = globalPose[0] + delta_time/1000*SRT_Mecanum.R/4*sqrt(2)*(cos(globalPose[2]+pi/4)*w_is_sign[0]+sin(globalPose[2]+pi/4)*w_is_sign[1]+cos(globalPose[2]+pi/4)*w_is_sign[2]+sin(globalPose[2]+pi/4)*w_is_sign[3]);
 	odometryPose[1] = globalPose[1] + delta_time/1000*SRT_Mecanum.R/4*sqrt(2)*(sin(globalPose[2]+pi/4)*w_is_sign[0]-cos(globalPose[2]+pi/4)*w_is_sign[1]+sin(globalPose[2]+pi/4)*w_is_sign[2]-cos(globalPose[2]+pi/4)*w_is_sign[3]);
 	odometryPose[2] = globalPose[2] + delta_time/1000*SRT_Mecanum.R/(4*(SRT_Mecanum.l_x+SRT_Mecanum.l_y))*(w_is_sign[0]-w_is_sign[1]-w_is_sign[2]+w_is_sign[3]);	
+	if(odometryPose[2]>pi){
+		odometryPose[2] = - 2*pi + odometryPose[2];
+	}
+	else if(odometryPose[2]<-pi){
+		odometryPose[2] = 2*pi + odometryPose[2];
+	}
 }
 
 // Calculate new pose from NFC tag
@@ -63,10 +69,16 @@ void Pose::newPoseOdometry(float * w_is_sign, Mecanum SRT_Mecanum, float delta_t
 
 // Calculate new orientation from IMU data only
 // !!!! Requires delta angle from last time step !!!!!!!!!!!
-void Pose::newAngleIMU(float yaw_prev, float yaw_is) {
+void Pose::newAngleIMU(float yaw_prev_robot, float yaw_prev_IMU, float yaw_is_IMU) {
 	float delta_angle;
-	delta_angle = yaw_is - yaw_prev;
-	IMU_angle = globalPose[2] + delta_angle;
+	delta_angle = yaw_is_IMU - yaw_prev_IMU;
+	IMU_angle = yaw_prev_robot + delta_angle;
+	if(IMU_angle>pi){
+		IMU_angle = -2*pi +IMU_angle;
+	}
+	else if(IMU_angle<-pi){
+		IMU_angle = 2*pi + IMU_angle;
+	}
 }
 
 void Pose::calctoGo_local(){

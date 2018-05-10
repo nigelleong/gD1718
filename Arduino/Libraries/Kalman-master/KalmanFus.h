@@ -10,25 +10,11 @@
 class KalmanFus
 {
 private:
-	const float pi = 3.14159265359;
-	float Eye[3][3];
-	float Jacobi_F[3][3];
-	float Jacobi_F_trans[3][3];
-	float Jacobi_W[3][3];
-	float Jacobi_W_trans[3][3];
-	float H_IMU[3]; // Sensor model for IMU
-	float P[3][3]; //Error Model
-	float P_pred[3][3]; //predicted error model
-	float Kalman_Gain[3];
-	float Pose_pred[3];
-	float Q[3][3]; //Cov_Action
-	float z_pred;
-	float z_diff;
-	float Cov_Sensor;
+
 	
 	void calcJacobiTransition(float* , Mecanum, Pose, float);
 	void calcJacobiAction(Pose);
-	void predictNewState(float*, Mecanum, Pose, float);
+	void predictNewState(Pose);
 	void predictErrorModel();
 	void calcKalmanGain();
 	void predictSensor(float);
@@ -37,6 +23,23 @@ public:
 	KalmanFus();
 	float new_State[3];
 	void calcNewState(float* w_is, Mecanum, Pose, float);
+	
+	// Put this later in private:
+	float P[3][3];//Error Model
+	const float pi = 3.14159265359;
+	float Eye[3][3];
+	float Jacobi_F[3][3];
+	float Jacobi_F_trans[3][3];
+	float Jacobi_W[3][3];
+	float Jacobi_W_trans[3][3];
+	float H_IMU[3]; // Sensor model for IMU
+	float P_pred[3][3]; //predicted error model
+	float Kalman_Gain[3];
+	float Pose_pred[3];
+	float Q[3][3]; //Cov_Action
+	float z_pred;
+	float z_diff;
+	float Cov_Sensor;
 };
 
 #endif
