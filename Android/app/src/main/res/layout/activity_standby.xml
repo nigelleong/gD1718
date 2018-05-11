@@ -1,126 +1,139 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
-    <Button
-        android:id="@+id/btn_driving"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="49dp"
-        android:text="Driving"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <RelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
-    <Button
-        android:id="@+id/btn_folding"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignStart="@+id/btn_driving"
-        android:layout_below="@+id/btn_driving"
-        android:layout_marginTop="17dp"
-        android:text="Folding"
-        tools:layout_editor_absoluteX="32dp"
-        tools:layout_editor_absoluteY="128dp" />
+        <Button
+            android:id="@+id/btn_driving"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="Driving"
+            android:layout_centerHorizontal="true"/>
 
-    <Button
-        android:id="@+id/btn_analog"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/btn_layouts"
-        android:layout_centerHorizontal="true"
-        android:text="Remote Control"
-        tools:layout_editor_absoluteX="261dp"
-        tools:layout_editor_absoluteY="128dp" />
+        <Button
+            android:id="@+id/btn_folding"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@+id/btn_driving"
+            android:layout_below="@+id/btn_driving"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="14dp"
+            android:text="Folding" />
 
-    <Button
-        android:id="@+id/btn_layouts"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:text="Layouts" />
+        <Button
+            android:id="@+id/btn_analog"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/btn_folding"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="14dp"
+            android:text="Remote Control" />
 
-    <Button
-        android:id="@+id/btn_PID"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/btn_layouts"
-        android:layout_centerHorizontal="true"
-        android:text="PID Position Control" />
+        <Button
+            android:id="@+id/btn_layouts"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/btn_analog"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="14dp"
+            android:text="Layouts" />
 
-    <Button
-        android:id="@+id/btn_submit_pose"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignStart="@+id/btn_layouts"
-        android:layout_marginBottom="17dp"
-        android:layout_weight="1"
-        android:text="Submit" />
+        <Button
+            android:id="@+id/btn_PID"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/btn_layouts"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="14dp"
+            android:text="PID Position Control" />
 
-    <TextView
-        android:id="@+id/txt_pose_x"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/btn_submit_pose"
-        android:layout_marginBottom="73dp"
-        android:layout_marginEnd="11dp"
-        android:text="Pose x:" />
+    </RelativeLayout>
 
-    <TextView
-        android:id="@+id/txt_pose_y"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_below="@+id/txt_pose_x_value"
-        android:text="Pose y:" />
+    <RelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
-    <TextView
-        android:id="@+id/txt_rotation"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_below="@+id/txt_pose_y"
-        android:layout_marginTop="12dp"
-        android:text="Rotation:" />
+        <TextView
+            android:id="@+id/txt_pose_x"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentLeft="true"
+            android:layout_marginTop="12dp"
+            android:layout_marginLeft="30dp"
+            android:text="Pose x:" />
 
-    <EditText
-        android:id="@+id/txt_pose_x_value"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBaseline="@+id/txt_pose_x"
-        android:layout_alignBottom="@+id/txt_pose_x"
-        android:layout_toEndOf="@+id/txt_rotation"
-        android:ems="5"
-        android:inputType="numberSigned"
-        android:textSize="14sp" />
+        <TextView
+            android:id="@+id/txt_pose_y"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="12dp"
+            android:text="Pose y:" />
 
-    <EditText
-        android:id="@+id/txt_pose_y_value"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBaseline="@+id/txt_pose_y"
-        android:layout_alignBottom="@+id/txt_pose_y"
-        android:layout_alignStart="@+id/txt_pose_x_value"
-        android:ems="5"
-        android:inputType="numberSigned"
-        android:textSize="14sp" />
+        <TextView
+            android:id="@+id/txt_rotation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:layout_marginTop="12dp"
+            android:layout_marginRight="50dp"
+            android:text="Rotation:" />
 
-    <EditText
-        android:id="@+id/txt_pose_rot_value"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/txt_pose_y"
-        android:layout_toEndOf="@+id/txt_rotation"
-        android:ems="5"
-        android:inputType="numberSigned"
-        android:textSize="14sp" />
+        <EditText
+            android:id="@+id/txt_pose_x_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/txt_pose_x"
+            android:layout_marginLeft="30dp"
+            android:ems="5"
+            android:inputType="numberSigned"
+            android:textSize="14sp" />
 
+        <EditText
+            android:id="@+id/txt_pose_y_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/txt_pose_y"
+            android:layout_centerHorizontal="true"
+            android:ems="5"
+            android:inputType="numberSigned"
+            android:textSize="14sp"/>
 
-</RelativeLayout>
+        <EditText
+            android:id="@+id/txt_pose_rot_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@+id/txt_rotation"
+            android:layout_below="@+id/txt_rotation"
+            android:layout_marginRight="30dp"
+            android:ems="5"
+            android:inputType="numberSigned"
+            android:textSize="14sp"/>
+
+        <Button
+            android:id="@+id/btn_submit_pose"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/txt_pose_y_value"
+            android:layout_marginTop="12dp"
+            android:layout_centerHorizontal="true"
+            android:text="Set Pose" />
+
+    </RelativeLayout>
+
+</LinearLayout>
