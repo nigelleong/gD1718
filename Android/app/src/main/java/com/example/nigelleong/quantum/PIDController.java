@@ -4,7 +4,6 @@ package com.example.nigelleong.quantum;
  * Created by nigelleong on 28/4/18.
  */
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
@@ -19,7 +18,7 @@ import java.io.IOException;
 
 public class PIDController extends AppCompatActivity implements View.OnClickListener {
 
-    Button btnGoTo5050;
+    Button btnGoTo505090, btnGoTo100125180, btnGoTo2510090, btnGoTo000;
 
     BluetoothSocket btSocket;
     BluetoothSocketHelper bluetoothSocketHelper;
@@ -40,8 +39,16 @@ public class PIDController extends AppCompatActivity implements View.OnClickList
 //        btnStandby = (Button)findViewById(R.id.btn_pid_standby);
 //        btnStandby.setOnClickListener(this);
 
-        btnGoTo5050 = (Button)findViewById(R.id.btn_goto5050);
-        btnGoTo5050.setOnClickListener(this);
+        btnGoTo505090 = (Button)findViewById(R.id.btn_goto505090);
+        btnGoTo100125180 = (Button)findViewById(R.id.btn_goto_100125180);
+        btnGoTo2510090 = (Button)findViewById(R.id.btn_goto_2510090);
+        btnGoTo000 = (Button)findViewById(R.id.btn_goto000);
+
+        btnGoTo505090.setOnClickListener(this);
+        btnGoTo100125180.setOnClickListener(this);
+        btnGoTo2510090.setOnClickListener(this);
+        btnGoTo2510090 .setOnClickListener(this);
+
 
         //Switch to PID position control (state = 5);
         if (btSocket!=null) {
@@ -70,24 +77,61 @@ public class PIDController extends AppCompatActivity implements View.OnClickList
     @Override
     public void onClick(View view) {
         switch(view.getId()) {
-//            case R.id.btn_pid_standby:
-//                Intent drivingIntent = new Intent(PIDController.this, standbyController.class);
-//                startActivity(drivingIntent);
-//                break;
-            case R.id.btn_goto5050:
-                moveTo5050();
+            case R.id.btn_goto505090:
+                moveTo505090();
+                break;
+            case R.id.btn_goto_100125180:
+                moveTo100125180();
+                break;
+            case R.id.btn_goto_2510090:
+                moveTo2510090();
+                break;
+            case R.id.btn_goto000:
+                mobeTo000();
                 break;
             default:
                 break;
         }
     }
 
-    private void moveTo5050() {
+    private void moveTo505090() {
         if (btSocket!=null) {
             try {
-//                btSocket.getOutputStream().write("M|2000|2000|90!".getBytes());
-                btSocket.getOutputStream().write("T|500|500|0!".getBytes());
-                toastMsg("Command 'Go to Position 50 50' sent");
+                btSocket.getOutputStream().write("T|500|500|90!".getBytes());
+                toastMsg("Command 'Go to Position 50 50 90' sent");
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+    }
+
+    private void moveTo100125180() {
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("T|1000|1250|180!".getBytes());
+                toastMsg("Command 'Go to Position 100 125 180' sent");
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+    }
+
+    private void moveTo2510090() {
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("T|250|100|-90!".getBytes());
+                toastMsg("Command 'Go to Position 25 100 -90' sent");
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+    }
+
+    private void mobeTo000() {
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("T|0|0|0!".getBytes());
+                toastMsg("Command 'Go to Position 0 0 0' sent");
             } catch (IOException e) {
                 toastMsg("Error");
             }

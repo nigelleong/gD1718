@@ -16,7 +16,6 @@
 #include <KalmanFus.h>
 #include <discreteKalman.h>
 #include <PinAllocation.h>
-//#include <TagAllocation.h>
 
 
 const float pi = 3.14159265359;
@@ -124,9 +123,10 @@ PID PID_DC4(&w_is[3], &PID_Out_DC[3], &w_should[3], Kp_DC, Ki_DC, Kd_DC, DIRECT)
 // Create PID for position Control
 double Kp_Pose_xy = 1, Ki_Pose_xy = 0.5, Kd_Pose_xy = 0;
 PID PID_x(&Robot_Pose.globalPose[0], &v[0], &Robot_Pose.globalPose_should[0], Kp_Pose_xy, Ki_Pose_xy, Kd_Pose_xy, DIRECT);
-PID PID_y(&Robot_Pose.globalPose[1], &v[1], &Robot_Pose.globalPose_should[1], Kp_DC, Ki_DC, Kd_DC, DIRECT);
-double Kp_Pose_th = 0.1, Ki_Pose_th = 0.1, Kd_Pose_th = 0;
-PID PID_theta(&Robot_Pose.globalPose[2], &v[2], &Robot_Pose.globalPose_should[2], Kp_DC, Ki_DC, Kd_DC, DIRECT);
+PID PID_y(&Robot_Pose.globalPose[1], &v[1], &Robot_Pose.globalPose_should[1], Kp_Pose_xy, Ki_Pose_xy, Kd_Pose_xy, DIRECT);
+double Kp_Pose_theta = 0.1, Ki_Pose_theta = 0.1, Kd_Pose_theta = 0;
+PID PID_theta(&Robot_Pose.globalPose[2], &v[2], &Robot_Pose.globalPose_should[2], Kp_Pose_theta, Ki_Pose_theta, Kd_Pose_theta, DIRECT);
+PID PID_heading(&Robot_Pose.globalPose[2], &v[2], &Robot_Pose.heading_angle, Kp_Pose_theta, Ki_Pose_theta, Kd_Pose_theta, DIRECT);
 
 // Maximal Speeds in mm/s and rad/s
 const double v_max_x = 300;
@@ -135,8 +135,7 @@ const double v_max_theta = 0.6;
 // Arguments from remote control can either be in local frame or global frame:
 bool remote_local = false;
 // Distances/angle at which PID takes over
-const double PID_dis_x = 50;
-const double PID_dis_y = 50;
+const double PID_dis_xy = 50;
 const double PID_dis_theta = 1;
 // Allowed Pose Error:
 const float Pose_error_xy = 0.5;
@@ -258,9 +257,12 @@ void setup() {
   PID_y.SetSampleTime(PID_sample_time);
   PID_theta.SetMode(AUTOMATIC);
   PID_theta.SetSampleTime(PID_sample_time);
+  PID_heading.SetMode(AUTOMATIC);
+  PID_heading.SetSampleTime(PID_sample_time);
   PID_x.SetOutputLimit(-0.5*v_max_x, 0.5*v_max_x);
   PID_y.SetOutputLimit(-0.5*v_max_y, 0.5*v_max_y);
   PID_theta.SetOutputLimit(-0.5*v_max_theta, 0.5*v_max_theta);
+  PID_heading.SetOutputLimit(-0.5*v_max_theta, 0.5*v_max_theta);
 }
 
 void loop() {  
@@ -534,9 +536,9 @@ void loop() {
         case 'T': //'T': target position
         {
           // Arguments contain the desired position
-          Robot_Pose.globalPose_should[0] = arg1;
-          Robot_Pose.globalPose_should[1] = arg2;
-          Robot_Pose.globalPose_should[2] = arg3;
+          Robot_Pose.globalPose_should[0] = (double)arg1;
+          Robot_Pose.globalPose_should[1] = (double)arg2;
+          Robot_Pose.globalPose_should[2] = ((double)arg3)*pi/180;
           if(print_to_COM){
             Serial.print("Heading to x: ");
             Serial.print(arg1);
@@ -563,52 +565,83 @@ void loop() {
           Robot_Pose.calctoGo_local();
           time = millis();
           time_prev = millis();
-          time_prev_IMU = millis();
-          
-          while((abs(Robot_Pose.toGo_local[0])>Pose_error_xy || abs(Robot_Pose.toGo_local[1])>Pose_error_xy || abs(Robot_Pose.toGo_local[2])>Pose_error_theta) && millis()-time < 20000){
-            if(abs(Robot_Pose.toGo_local[0])<PID_dis_x){
-              PID_x.Compute();
-            }
-            else{
-              v[0] = 0.5*sgn(Robot_Pose.toGo_local[0])*v_max_x;
-            }
-            if(abs(Robot_Pose.toGo_local[1])<PID_dis_y){
-              PID_y.Compute();
-            }
-            else{
-              v[1] = 0.5*sgn(Robot_Pose.toGo_local[1])*v_max_y;
-            }
-            if(abs(Robot_Pose.toGo_local[2])<PID_dis_theta){
-              PID_theta.Compute();
-              
-            }
-            else{
-              v[2] = 0.5*sgn(Robot_Pose.toGo_local[2])*v_max_theta;
+
+          while((abs(Robot_Pose.toGo_local[2])>Pose_error_theta||abs(Robot_Pose.toGo_local[1])>Pose_error_xy||abs(Robot_Pose.toGo_local[2])>Pose_error_xy )&& millis()-time < 10000){
+            // ROTATE to head to target
+            while(abs(Robot_Pose.globalPose[2]-Robot_Pose.heading_angle)>Pose_error_theta){
+              if(abs(Robot_Pose.globalPose[2]-Robot_Pose.heading_angle)<PID_dis_theta){
+                PID_heading.Compute();
+              }
+              else{
+                v[2] = 0.5*sgn(Robot_Pose.globalPose[2]-Robot_Pose.heading_angle)*v_max_theta;
+              }
+              // Drive Robot
+              if(v[0]==0&&v[1]==0&&v[2]==0){
+                DC_STOP = allWheelsSTOP();
+              }
+              // Calculate desired wheels speeds WITH SIGN
+              SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
+              // Desired wheel speeds WITHOUT SIGN (needed for PID controller
+              SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
+              if(!DC_STOP){
+                run_DC();
+              }
+              localize_Robot();
+              Robot_Pose.calctoGo_local();
             }
             
-            if(v[0]==0&&v[1]==0&&v[2]==0){
-              DC_STOP = allWheelsSTOP();
+            // DRIVE Forward
+            while(abs(Robot_Pose.toGo_local[0])>Pose_error_xy){
+              if(abs(Robot_Pose.toGo_local[0])<PID_dis_xy){
+                PID_x.Compute();
+              }
+              else{
+                v[0] = 0.5*sgn(Robot_Pose.toGo_local[0])*v_max_x;
+              }
+              // Drive Robot
+              if(v[0]==0&&v[1]==0&&v[2]==0){
+                DC_STOP = allWheelsSTOP();
+              }
+              // Calculate desired wheels speeds WITH SIGN
+              SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
+              // Desired wheel speeds WITHOUT SIGN (needed for PID controller
+              SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
+              if(!DC_STOP){
+                run_DC();
+              }
+              localize_Robot();
+              Robot_Pose.calctoGo_local();
             }
-            // Calculate desired wheels speeds WITH SIGN
-            SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
-            // Desired wheel speeds WITHOUT SIGN (needed for PID controller
-            SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
-                     
-            if(!DC_STOP){
-              run_DC();
+
+            // ROTATE
+            while(abs(Robot_Pose.toGo_local[2])>Pose_error_theta){
+              if(abs(Robot_Pose.toGo_local[2])<PID_dis_theta){
+                PID_theta.Compute();
+              }
+              else{
+                v[2] = 0.5*sgn(Robot_Pose.toGo_local[2])*v_max_theta;
+              }
+
+              // Drive Robot
+              if(v[0]==0&&v[1]==0&&v[2]==0){
+                DC_STOP = allWheelsSTOP();
+              }
+              // Calculate desired wheels speeds WITH SIGN
+              SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
+              // Desired wheel speeds WITHOUT SIGN (needed for PID controller
+              SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
+              if(!DC_STOP){
+                run_DC();
+              }
+              localize_Robot();
+              Robot_Pose.calctoGo_local();
             }
-            localize_Robot();
-            
-            Robot_Pose.calctoGo_local();
-
-
           }
           DC_STOP = allWheelsSTOP();
           if(print_to_COM){
             Serial.println("Position reached!!");
           }
-        
-          
+
           break;
         }
         default: {break;} 
