@@ -3,7 +3,7 @@
 
 discreteKalman::discreteKalman() {
 	// Radius of detection area around tags
-	Radius = 33.08119275;
+	Radius = 30;
 	
 	// COvariance for area around tags
 	Q[0][0] = sq(Radius)/4;
@@ -25,12 +25,12 @@ discreteKalman::discreteKalman() {
 	P[2][1] = 0;
 	P[2][2] = 1;
 	
-	// Covariance tag misplacement: Assuming a misplacement of 5mm
-	R[0][0] = 0.25;
+	// Covariance tag misplacement: Assuming a misplacement
+	R[0][0] = 1;
 	R[0][1] = 0;
 	
 	R[1][0] = 0;
-	R[1][1] = 0.25;
+	R[1][1] = 1;
 	
 	// Sensor Model
 	H[0][0] = 1;
@@ -146,4 +146,5 @@ void discreteKalman::updateErrorModel(){
 	Matrix.Subtract((float*) Eye, (float*) KH_Product, 3, 3, (float*) I_KH_Diff);
 	Matrix.Multiply((float*) I_KH_Diff, (float*) P, 3, 3, 3, (float*) Diff_P_Product);
 	Matrix.Add((float*) Diff_P_Product, (float*) KQK_Product, 3, 3, (float*)P_new );
+	Matrix.Copy((float*) P_new, 3,  3, (float*) P);
 }

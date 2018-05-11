@@ -121,10 +121,10 @@ PID PID_DC3(&w_is[2], &PID_Out_DC[2], &w_should[2], Kp_DC, Ki_DC, Kd_DC, DIRECT)
 PID PID_DC4(&w_is[3], &PID_Out_DC[3], &w_should[3], Kp_DC, Ki_DC, Kd_DC, DIRECT);
 
 // Create PID for position Control
-double Kp_Pose_xy = 1, Ki_Pose_xy = 0.5, Kd_Pose_xy = 0;
+double Kp_Pose_xy = 2, Ki_Pose_xy = 0.8, Kd_Pose_xy = 0.1;
 PID PID_x(&Robot_Pose.globalPose[0], &v[0], &Robot_Pose.globalPose_should[0], Kp_Pose_xy, Ki_Pose_xy, Kd_Pose_xy, DIRECT);
 PID PID_y(&Robot_Pose.globalPose[1], &v[1], &Robot_Pose.globalPose_should[1], Kp_Pose_xy, Ki_Pose_xy, Kd_Pose_xy, DIRECT);
-double Kp_Pose_theta = 0.1, Ki_Pose_theta = 0.1, Kd_Pose_theta = 0;
+double Kp_Pose_theta = 1.7, Ki_Pose_theta = 0.6, Kd_Pose_theta = 0.1;
 PID PID_theta(&Robot_Pose.globalPose[2], &v[2], &Robot_Pose.globalPose_should[2], Kp_Pose_theta, Ki_Pose_theta, Kd_Pose_theta, DIRECT);
 PID PID_heading(&Robot_Pose.globalPose[2], &v[2], &Robot_Pose.heading_angle, Kp_Pose_theta, Ki_Pose_theta, Kd_Pose_theta, DIRECT);
 
@@ -136,10 +136,10 @@ const double v_max_theta = 0.6;
 bool remote_local = false;
 // Distances/angle at which PID takes over
 const double PID_dis_xy = 50;
-const double PID_dis_theta = 1;
+const double PID_dis_theta = 0.3;
 // Allowed Pose Error:
-const float Pose_error_xy = 0.5;
-const float Pose_error_theta = 0.01;
+const float Pose_error_xy = 30;
+const float Pose_error_theta = 0.1;
 
 bool print_to_COM = true;// true; //Print data da serial port (computer)
 bool print_commands = false;
@@ -288,7 +288,7 @@ void loop() {
         }
         case 'P': // Set global pose according to arguments
         {
-          Robot_Pose.setglobalPose(arg1,arg2,arg3);
+          set_global_pose((float)arg1,(float)arg2,(float)arg3);
           print_globalPose();
           break;
         }
@@ -315,7 +315,7 @@ void loop() {
         }
 		case 'P': // Set global pose according to arguments
         {
-          Robot_Pose.setglobalPose(arg1,arg2,arg3);
+          set_global_pose((float)arg1,(float)arg2,(float)arg3);
           print_globalPose();
           break;
         }
@@ -425,7 +425,7 @@ void loop() {
         }
         case 'P': // Set global pose according to arguments
         {
-          Robot_Pose.setglobalPose(arg1,arg2,arg3);
+          set_global_pose((float)arg1,(float)arg2,(float)arg3);
           print_globalPose();
           break;
         }
@@ -455,7 +455,6 @@ void loop() {
           yaw_prev_Robot = Robot_Pose.globalPose[2];
           //time_prev NEEDED for localization: Before starting localization always ste time_prev to millis!!
           time_prev = millis();
-		      time_prev_IMU = millis();
           localize_Robot();
           while(command=='M'){
             read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);
@@ -529,7 +528,7 @@ void loop() {
         }
         case 'P': // Set global pose according to arguments
         {
-          Robot_Pose.setglobalPose(arg1,arg2,arg3);
+          set_global_pose((float)arg1,(float)arg2,(float)arg3);
           print_globalPose();
           break;
         }
@@ -561,14 +560,17 @@ void loop() {
           mpu.resetFIFO();
           get_IMU_yaw();
           yaw_prev_IMU = ypr[0];
+          yaw_prev_Robot = Robot_Pose.globalPose[2];
           // Calculated distance to go in local system         
           Robot_Pose.calctoGo_local();
           time = millis();
           time_prev = millis();
-
-          while((abs(Robot_Pose.toGo_local[2])>Pose_error_theta||abs(Robot_Pose.toGo_local[1])>Pose_error_xy||abs(Robot_Pose.toGo_local[2])>Pose_error_xy )&& millis()-time < 10000){
+          localize_Robot();
+          
+          while((abs(Robot_Pose.toGo_local[2])>Pose_error_theta||abs(Robot_Pose.toGo_local[0])>Pose_error_xy||abs(Robot_Pose.toGo_local[1])>Pose_error_xy )&& millis()-time < 10000){
             // ROTATE to head to target
             while(abs(Robot_Pose.globalPose[2]-Robot_Pose.heading_angle)>Pose_error_theta){
+              Serial.println("Rotating");
               if(abs(Robot_Pose.globalPose[2]-Robot_Pose.heading_angle)<PID_dis_theta){
                 PID_heading.Compute();
               }
@@ -778,6 +780,12 @@ void change_loc_method(int arg1){
       // Set detected tag to current position
       KalmanNFC.tag_det[0] = Robot_Pose.globalPose[0];
       KalmanNFC.tag_det[1] = Robot_Pose.globalPose[1]; 
+      if(print_to_COM){
+        Serial.print("Virtual Tag: ");
+        Serial.print(KalmanNFC.tag_det[0]);
+        Serial.print("\t");
+        Serial.println(KalmanNFC.tag_det[1]);
+      }
       //Get current yaw angle
       mpu.resetFIFO();
       // read a packet from FIFO of IMU
@@ -846,7 +854,7 @@ void change_state(int arg1){
     }  
     case 5: 
     {
-      change_loc_method(2);
+      change_loc_method(0);
       break;
     }          
   }
@@ -1349,18 +1357,38 @@ void read_tag(int * tag_x, int * tag_y){
 }
 
 void debug_Kalman_NFC(){
+  Serial.print("Previous Tag = ");
+  Serial.print(KalmanNFC.tag_prev[0]);
+  Serial.print("\t");
+  Serial.println(KalmanNFC.tag_prev[1]);
+  
   Serial.print("Robot in Tag Zone = ");
   Serial.println(KalmanNFC.checkRobotinZone(Robot_Pose));
+
+  Serial.println("P = ");
+  Serial.print(KalmanNFC.P[0][0], DEC);
+   Serial.print("\t");
+   Serial.println(KalmanNFC.P[0][1], DEC);
+   Serial.print("\t");
+   Serial.println(KalmanNFC.P[0][2], DEC);
+   Serial.print(KalmanNFC.P[1][0], DEC);
+   Serial.print("\t");
+   Serial.print(KalmanNFC.P[1][1], DEC);
+   Serial.print("\t");
+   Serial.println(KalmanNFC.P[1][2], DEC);
+   Serial.print(KalmanNFC.P[2][0], DEC);
+   Serial.print("\t");
+   Serial.print(KalmanNFC.P[2][1], DEC);
+   Serial.print("\t");
+   Serial.println(KalmanNFC.P[2][2], DEC);
 
   Serial.println("Kalman_Gain = ");
   Serial.print(KalmanNFC.Kalman_Gain[0][0], DEC);
    Serial.print("\t");
    Serial.println(KalmanNFC.Kalman_Gain[0][1], DEC);
-
    Serial.print(KalmanNFC.Kalman_Gain[1][0], DEC);
    Serial.print("\t");
    Serial.println(KalmanNFC.Kalman_Gain[1][1], DEC);
-
    Serial.print(KalmanNFC.Kalman_Gain[2][0], DEC);
    Serial.print("\t");
    Serial.println(KalmanNFC.Kalman_Gain[2][1], DEC);
@@ -1370,5 +1398,19 @@ void debug_Kalman_NFC(){
    Serial.print("\t");
    Serial.println(KalmanNFC.correction[1]);
 
+}
+
+void set_global_pose(float arg1,float arg2,float arg3){
+  Robot_Pose.setglobalPose(arg1,arg2,arg3);
+  print_globalPose();
+  // Set detected tag to current position --> "Virtual tags"
+  KalmanNFC.tag_det[0] = Robot_Pose.globalPose[0];
+  KalmanNFC.tag_det[1] = Robot_Pose.globalPose[1]; 
+  if(print_to_COM){
+    Serial.print("Virtual Tag: ");
+    Serial.print(KalmanNFC.tag_det[0]);
+    Serial.print("\t");
+    Serial.println(KalmanNFC.tag_det[1]);
+  }
 }
          
