@@ -19,8 +19,8 @@ byte read_size = sizeof(read_buffer);
 */
 uint8_t pageAddr = 0x04;  //write/read 16 bytes (page 4,5,6 and 7).
 
-   int x_val = 0;
-    int y_val = 1250;
+   int x_val = 1250;
+    int y_val = 750;
     String x_str = String(x_val);
     String cut = "|";
     String y_str = String(y_val);
@@ -62,7 +62,7 @@ void loop()
         return;
       }
     }
-    x_val += 250;
+    y_val += 250;
     x_str = String(x_val);
     cut = "|";
     y_str = String(y_val);

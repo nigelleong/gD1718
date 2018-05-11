@@ -32,6 +32,7 @@ public:
 	void calctoGo_local();
 	void speed_to_local_v(float*, float, float, float);
 	float toGo_local[3];
+	double heading_angle;
 };
 
 #endif

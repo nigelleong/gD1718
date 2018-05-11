@@ -28,7 +28,7 @@ KalmanFus::KalmanFus() {
 	Q[2][1] = 0;
 	Q[2][2] = 0.000001577;
 	
-	// Sensor uncertainty (IMU) sdt^2 -> Varianze
+	// Sensor uncertainty (IMU) sdt^2 -> Variance
 	Cov_Sensor = 0.0000000933096;//0.0000000933096;
 	
 	// Sensor Model IMU

@@ -86,6 +86,7 @@ void Pose::calctoGo_local(){
 	toGo_global[1] = globalPose_should[1] - globalPose[1];
 	toGo_global[2] = globalPose_should[2] - globalPose[2];
 	Matrix.Multiply((float*) Trafo_inv, (float*) toGo_global, 3, 3, 1, (float*) toGo_local );
+	heading_angle = atan2(toGo_global[2],toGo_global[1]);
 }
 
 void Pose::speed_to_local_v(float * v, float x_global, float y_global, float w_global){
