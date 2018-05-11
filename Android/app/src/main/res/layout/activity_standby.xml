@@ -98,8 +98,7 @@
         android:layout_alignBottom="@+id/txt_pose_x"
         android:layout_toEndOf="@+id/txt_rotation"
         android:ems="5"
-        android:inputType="textPersonName"
-        android:text="x hint"
+        android:inputType="numberSigned"
         android:textSize="14sp" />
 
     <EditText
@@ -110,8 +109,7 @@
         android:layout_alignBottom="@+id/txt_pose_y"
         android:layout_alignStart="@+id/txt_pose_x_value"
         android:ems="5"
-        android:inputType="textPersonName"
-        android:text="y hint"
+        android:inputType="numberSigned"
         android:textSize="14sp" />
 
     <EditText
@@ -121,8 +119,7 @@
         android:layout_below="@+id/txt_pose_y"
         android:layout_toEndOf="@+id/txt_rotation"
         android:ems="5"
-        android:inputType="textPersonName"
-        android:text="rotation hint"
+        android:inputType="numberSigned"
         android:textSize="14sp" />
 
 

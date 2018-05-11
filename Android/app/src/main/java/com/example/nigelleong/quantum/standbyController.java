@@ -115,8 +115,10 @@ public class standbyController extends AppCompatActivity implements View.OnClick
                         pose_x = txtPoseX.getText().toString();
                         pose_y = txtPoseY.getText().toString();
                         pose_rot = txtPoseRot.getText().toString();
-                        Log.d("pose", "P|"+pose_x+"|"+pose_y+"|"+pose_rot+"!");
-                        btSocket.getOutputStream().write(("P|"+pose_x+"|"+pose_y+"|"+pose_rot+"!").getBytes());
+                        if (checkPoseValidity(pose_x, pose_y, pose_rot)){
+                            Log.d("pose", "P|" + pose_x + "|" + pose_y + "|" + pose_rot + "!");
+                            btSocket.getOutputStream().write(("P|" + pose_x + "|" + pose_y + "|" + pose_rot + "!").getBytes());
+                        }
                     } catch (IOException e) {
                         toastMsg("Error");
                     }
@@ -130,4 +132,22 @@ public class standbyController extends AppCompatActivity implements View.OnClick
     private void toastMsg(String s) {
         Toast.makeText(getApplicationContext(), s, Toast.LENGTH_LONG).show();
     }
+
+    private boolean checkPoseValidity(String pose_x, String pose_y, String pose_rot){
+
+        if ( pose_x.matches("") || Integer.valueOf(pose_x) < 0 || Integer.valueOf(pose_x) > 2500 ){
+            toastMsg("Pose x must be in the range of 0 to 2500");
+            return false;
+        }
+        if (pose_y.matches("") ||Integer.valueOf(pose_y) < 0 || Integer.valueOf(pose_y) > 2500){
+            toastMsg("Pose y must be in the range of 0 to 2500");
+            return false;
+        }
+        if (pose_rot.matches("") ||Integer.valueOf(pose_rot) < -180 || Integer.valueOf(pose_rot) > 180){
+            toastMsg("Pose Rotation must be in the range of -180 to 180");
+            return false;
+        }
+        return true;
+    }
+
 }
