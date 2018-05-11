@@ -9,12 +9,14 @@ import android.os.Bundle;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
 import android.util.Log;
 
 
 import android.bluetooth.BluetoothSocket;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -27,7 +29,9 @@ import java.util.UUID;
 public class standbyController extends AppCompatActivity implements View.OnClickListener {
 
     Button btnDriving, btnFolding, btnAnalog, btnLayouts, btnPID, btnSubmitPose;
-    TextInputEditText inputPose;
+    EditText txtPoseX, txtPoseY, txtPoseRot;
+
+    String pose_x, pose_y, pose_rot;
 
     BluetoothSocket btSocket = null;
     BluetoothSocketHelper bluetoothSocketHelper;
@@ -53,7 +57,9 @@ public class standbyController extends AppCompatActivity implements View.OnClick
         btnPID = (Button)findViewById(R.id.btn_PID);
         btnSubmitPose = (Button) findViewById(R.id.btn_submit_pose);
 
-        inputPose = (TextInputEditText) findViewById(R.id.wrp_input_pose);
+        txtPoseX = (EditText) findViewById(R.id.txt_pose_x_value);
+        txtPoseY = (EditText) findViewById(R.id.txt_pose_y_value);
+        txtPoseRot = (EditText) findViewById(R.id.txt_pose_rot_value);
 
         btnDriving.setOnClickListener(this);
         btnFolding.setOnClickListener(this);
@@ -106,7 +112,11 @@ public class standbyController extends AppCompatActivity implements View.OnClick
             case R.id.btn_submit_pose:
                 if (btSocket != null) {
                     try {
-                        btSocket.getOutputStream().write(inputPose.toString().getBytes());
+                        pose_x = txtPoseX.getText().toString();
+                        pose_y = txtPoseY.getText().toString();
+                        pose_rot = txtPoseRot.getText().toString();
+                        Log.d("pose", "P|"+pose_x+"|"+pose_y+"|"+pose_rot+"!");
+                        btSocket.getOutputStream().write(("P|"+pose_x+"|"+pose_y+"|"+pose_rot+"!").getBytes());
                     } catch (IOException e) {
                         toastMsg("Error");
                     }
