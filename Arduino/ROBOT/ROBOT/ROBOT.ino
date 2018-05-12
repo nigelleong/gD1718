@@ -291,7 +291,7 @@ void loop() {
         case 'P': // Set global pose according to arguments
         {
           set_global_pose((float)arg1,(float)arg2,(float)arg3);
-          print_globalPose();
+//          print_globalPose();
           break;
         }
         default: {state = 0; break;}// Stay in STANDBY 
@@ -318,7 +318,7 @@ void loop() {
 		case 'P': // Set global pose according to arguments
         {
           set_global_pose((float)arg1,(float)arg2,(float)arg3);
-          print_globalPose();
+//          print_globalPose();
           break;
         }
         case 'M': //Moving with velocities defined by arg1-3 for a certain time
@@ -428,7 +428,7 @@ void loop() {
         case 'P': // Set global pose according to arguments
         {
           set_global_pose((float)arg1,(float)arg2,(float)arg3);
-          print_globalPose();
+//          print_globalPose();
           break;
         }
         case 'M': //Moving with velocities defined by arg1-3 for a certain time
@@ -531,7 +531,7 @@ void loop() {
         case 'P': // Set global pose according to arguments
         {
           set_global_pose((float)arg1,(float)arg2,(float)arg3);
-          print_globalPose();
+//          print_globalPose();
           break;
         }
         case 'T': //'T': target position
@@ -1478,7 +1478,7 @@ void debug_Kalman_NFC(){
 }
 
 void set_global_pose(float arg1,float arg2,float arg3){
-  Robot_Pose.setglobalPose(arg1,arg2,arg3);
+  Robot_Pose.setglobalPose(arg1,arg2,arg3*pi/180);
   print_globalPose();
   // Set detected tag to current position --> "Virtual tags"
   KalmanNFC.tag_det[0] = Robot_Pose.globalPose[0];

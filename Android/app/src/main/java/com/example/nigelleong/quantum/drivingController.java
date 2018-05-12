@@ -4,7 +4,6 @@ package com.example.nigelleong.quantum;
  * Created by nigelleong on 28/4/18.
  */
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
@@ -47,7 +46,7 @@ public class drivingController extends AppCompatActivity implements View.OnClick
         btnOdoIMU = (Button)findViewById(R.id.btn_odo_imu);
         btnOdoIMUNFC = (Button)findViewById(R.id.btn_odo_imu_nfc);
         btnClockwise = (Button)findViewById(R.id.btn_clockwise);
-        btnCounterClockwise = (Button)findViewById(R.id.btn_counterclock);
+        btnCounterClockwise = (Button)findViewById(R.id.btn_counterclockwise);
 
 
         btnUp.setOnClickListener(this);
@@ -105,7 +104,7 @@ public class drivingController extends AppCompatActivity implements View.OnClick
             case R.id.btn_clockwise:
                 robotTurnClockwise();
                 break;
-            case R.id.btn_counterclock:
+            case R.id.btn_counterclockwise:
                 robotTurnCounterclockwise();
                 break;
             case R.id.btn_reset:

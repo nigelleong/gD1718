@@ -9,12 +9,14 @@ import android.os.Bundle;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
 import android.util.Log;
 
 
 import android.bluetooth.BluetoothSocket;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -27,7 +29,9 @@ import java.util.UUID;
 public class standbyController extends AppCompatActivity implements View.OnClickListener {
 
     Button btnDriving, btnFolding, btnAnalog, btnLayouts, btnPID, btnSubmitPose;
-    TextInputEditText inputPose;
+    EditText txtPoseX, txtPoseY, txtPoseRot;
+
+    String pose_x, pose_y, pose_rot;
 
     BluetoothSocket btSocket = null;
     BluetoothSocketHelper bluetoothSocketHelper;
@@ -53,7 +57,9 @@ public class standbyController extends AppCompatActivity implements View.OnClick
         btnPID = (Button)findViewById(R.id.btn_PID);
         btnSubmitPose = (Button) findViewById(R.id.btn_submit_pose);
 
-        inputPose = (TextInputEditText) findViewById(R.id.wrp_input_pose);
+        txtPoseX = (EditText) findViewById(R.id.txt_pose_x_value);
+        txtPoseY = (EditText) findViewById(R.id.txt_pose_y_value);
+        txtPoseRot = (EditText) findViewById(R.id.txt_pose_rot_value);
 
         btnDriving.setOnClickListener(this);
         btnFolding.setOnClickListener(this);
@@ -106,7 +112,13 @@ public class standbyController extends AppCompatActivity implements View.OnClick
             case R.id.btn_submit_pose:
                 if (btSocket != null) {
                     try {
-                        btSocket.getOutputStream().write(inputPose.toString().getBytes());
+                        pose_x = txtPoseX.getText().toString();
+                        pose_y = txtPoseY.getText().toString();
+                        pose_rot = txtPoseRot.getText().toString();
+                        if (checkPoseValidity(pose_x, pose_y, pose_rot)){
+                            Log.d("pose", "P|" + pose_x + "|" + pose_y + "|" + pose_rot + "!");
+                            btSocket.getOutputStream().write(("P|" + pose_x + "|" + pose_y + "|" + pose_rot + "!").getBytes());
+                        }
                     } catch (IOException e) {
                         toastMsg("Error");
                     }
@@ -120,4 +132,22 @@ public class standbyController extends AppCompatActivity implements View.OnClick
     private void toastMsg(String s) {
         Toast.makeText(getApplicationContext(), s, Toast.LENGTH_LONG).show();
     }
+
+    private boolean checkPoseValidity(String pose_x, String pose_y, String pose_rot){
+
+        if ( pose_x.matches("") || Integer.valueOf(pose_x) < 0 || Integer.valueOf(pose_x) > 2500 ){
+            toastMsg("Pose x must be in the range of 0 to 2500");
+            return false;
+        }
+        if (pose_y.matches("") ||Integer.valueOf(pose_y) < 0 || Integer.valueOf(pose_y) > 2500){
+            toastMsg("Pose y must be in the range of 0 to 2500");
+            return false;
+        }
+        if (pose_rot.matches("") ||Integer.valueOf(pose_rot) < -180 || Integer.valueOf(pose_rot) > 180){
+            toastMsg("Pose Rotation must be in the range of -180 to 180");
+            return false;
+        }
+        return true;
+    }
+
 }
