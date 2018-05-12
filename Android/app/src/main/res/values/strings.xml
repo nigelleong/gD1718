@@ -6,4 +6,11 @@
     <string name="title_activity_layout">layoutController</string>
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
+
+    <string name="productName">HyperForm</string>
+
+    <!--Standby Activity Layout-->
+    <string name="connect_btn_str">Connect HyperForm</string>
+    <string name="productDescription">In a collaboration of 8 students from TUM and NTU, asoub wewpiug asponpwoeu awpoeugb asa.\n\n Brought to you by team quaNTUM</string>
+
 </resources>

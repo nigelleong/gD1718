@@ -31,7 +31,7 @@ public class deviceListController extends AppCompatActivity implements View.OnCl
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device_list);
 
-        btnPaired = (Button)findViewById(R.id.button);
+        btnPaired = (Button)findViewById(R.id.btn_connect);
         devicelist = (ListView)findViewById(R.id.listView);
 
         //if the device has bluetooth
@@ -53,7 +53,7 @@ public class deviceListController extends AppCompatActivity implements View.OnCl
     @Override
     public void onClick(View view) {
         switch(view.getId()) {
-            case R.id.button:
+            case R.id.btn_connect:
                 pairedDevicesList();
             default:
                 break;
@@ -73,7 +73,9 @@ public class deviceListController extends AppCompatActivity implements View.OnCl
             Toast.makeText(getApplicationContext(), "No Paired Bluetooth Devices Found.", Toast.LENGTH_LONG).show();
         }
 
-        final ArrayAdapter adapter = new ArrayAdapter(this,android.R.layout.simple_list_item_1, list);
+        final ArrayAdapter adapter = new ArrayAdapter(this, R.layout.list_white_text, R.id.list_content, list);
+//        final ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, list);
+
         devicelist.setAdapter(adapter);
         devicelist.setOnItemClickListener(myListClickListener); //Method called when the device from the list is clicked
 
@@ -84,6 +86,7 @@ public class deviceListController extends AppCompatActivity implements View.OnCl
         public void onItemClick (AdapterView<?> av, View v, int arg2, long arg3)
         {
             // Get device MAC address, the last 17 chars in the View
+//            String info = ((TextView) v).getText().toString();
             String info = ((TextView) v).getText().toString();
             String address = info.substring(info.length() - 17);
 

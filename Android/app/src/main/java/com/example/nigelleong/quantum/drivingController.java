@@ -40,7 +40,6 @@ public class drivingController extends AppCompatActivity implements View.OnClick
         btnDown = (Button)findViewById(R.id.btn_down);
         btnLeft = (Button)findViewById(R.id.btn_left);
         btnRight = (Button)findViewById(R.id.btn_right);
-//        btnStandby = (Button)findViewById(R.id.btn_driving_standby);
         btnReset = (Button)findViewById(R.id.btn_reset);
         btnOdo = (Button)findViewById(R.id.btn_odo);
         btnOdoIMU = (Button)findViewById(R.id.btn_odo_imu);
@@ -53,13 +52,11 @@ public class drivingController extends AppCompatActivity implements View.OnClick
         btnDown.setOnClickListener(this);
         btnLeft.setOnClickListener(this);
         btnRight.setOnClickListener(this);
-//        btnStandby.setOnClickListener(this);
         btnReset.setOnClickListener(this);
+        btnOdo.setOnClickListener(this);
         btnOdo.setOnClickListener(this);
         btnOdoIMU.setOnClickListener(this);
         btnOdoIMUNFC.setOnClickListener(this);
-        btnClockwise.setOnClickListener(this);
-        btnCounterClockwise.setOnClickListener(this);
 
 
         //Switch to DRIVING (state = 1);
