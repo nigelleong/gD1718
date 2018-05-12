@@ -41,6 +41,9 @@ public:
 	void calcKalmanGain();
 	void updateErrorModel();
 	float correction[2];
+	bool NFC_angle;
+	float Reader_Offset[3];
+	void offset_Reader(Pose);
 };
 
 #endif

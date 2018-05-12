@@ -11,8 +11,7 @@ class Pose
 {
 private:
 	const float pi = 3.14159265359;
-	float Trafo[3][3];
-	float Trafo_inv[3][3];
+	
 	void calcTrafo(float);
 	float toGo_global[3];
 	
@@ -20,6 +19,8 @@ private:
 public:	
 	Pose();
 	Pose(float, float, float);
+	float Trafo[3][3];
+	float Trafo_inv[3][3];
 	float calc_v_to_Pose_should(float*, float, float);	//float* v, float max speed, float max rotationsl speed
 	double globalPose_should[3];
 	double globalPose[3];
@@ -31,7 +32,7 @@ public:
 	void newAngleIMU(float, float, float);
 	void calctoGo_local();
 	void speed_to_local_v(float*, float, float, float);
-	float toGo_local[3];
+	double toGo_local[3];
 	double heading_angle;
 };
 

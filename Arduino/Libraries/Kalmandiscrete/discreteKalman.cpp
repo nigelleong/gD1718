@@ -2,8 +2,9 @@
 #include <discreteKalman.h>
 
 discreteKalman::discreteKalman() {
+	NFC_angle = true;
 	// Radius of detection area around tags
-	Radius = 30;
+	Radius = 33.081192756874980;
 	
 	// COvariance for area around tags
 	Q[0][0] = sq(Radius)/4;
@@ -13,12 +14,12 @@ discreteKalman::discreteKalman() {
 	Q[1][1] = sq(Radius)/4;
 	
 	// Initialize Error Model
-	P[0][0] = 1;
+	P[0][0] = 272.5913085937;
 	P[0][1] = 0;
 	P[0][2] = 0;
 	
 	P[1][0] = 0;
-	P[1][1] = 1;
+	P[1][1] = 272.5913085937;
 	P[1][2] = 0;
 	
 	P[2][0] = 0;
@@ -105,7 +106,12 @@ void discreteKalman::calcNewState(Pose SRT_Pose){
 		Matrix.Multiply((float*) Kalman_Gain, (float*) center_dist, 3, 2, 1, (float*) correction);
 		new_State[0] = SRT_Pose.globalPose[0] + correction[0];
 		new_State[1] = SRT_Pose.globalPose[1] + correction[1];
-		new_State[2] = yaw_est;
+		if(NFC_angle){
+			new_State[2] = yaw_est;
+		}
+		else{
+			new_State[2] = SRT_Pose.globalPose[2];
+		}
 		updateErrorModel();
 	}
 }
@@ -130,7 +136,7 @@ void discreteKalman::calcKalmanGain() {
 	Matrix.Invert((float*) Sum, 2);
 	Matrix.Multiply((float*) Error_Sensor_Product, (float*) Sum, 3, 2, 2, (float*) Kalman_Gain);
 	// Transpose Galman Gain matrix
-	Matrix.Transpose((float*) Kalman_Gain, 3, 3, (float*) Kalman_Gain_trans);
+	Matrix.Transpose((float*) Kalman_Gain, 3, 2, (float*) Kalman_Gain_trans);
 }
 
 void discreteKalman::updateErrorModel(){
@@ -140,11 +146,18 @@ void discreteKalman::updateErrorModel(){
 	float I_KH_Diff[3][3];
 	float Diff_P_Product[3][3];
 	float P_new[3][3];
-	Matrix.Multiply((float*) Kalman_Gain_trans, (float*) Q, 3, 2, 2, (float*) KQ_Product);
+	Matrix.Multiply((float*) Kalman_Gain, (float*) Q, 3, 2, 2, (float*) KQ_Product);
 	Matrix.Multiply((float*) KQ_Product, (float*) Kalman_Gain_trans, 3, 2, 3, (float*) KQK_Product);
 	Matrix.Multiply((float*) Kalman_Gain, (float*) H, 3, 2, 3, (float*) KH_Product);
 	Matrix.Subtract((float*) Eye, (float*) KH_Product, 3, 3, (float*) I_KH_Diff);
 	Matrix.Multiply((float*) I_KH_Diff, (float*) P, 3, 3, 3, (float*) Diff_P_Product);
 	Matrix.Add((float*) Diff_P_Product, (float*) KQK_Product, 3, 3, (float*)P_new );
 	Matrix.Copy((float*) P_new, 3,  3, (float*) P);
+}
+void discreteKalman::offset_Reader(Pose SRT_Pose){
+	float tag_det_offset[3];
+	Matrix.Multiply((float*) SRT_Pose.Trafo_inv, (float*) Reader_Offset, 3, 3, 1, (float*) tag_det_offset);
+	tag_det[0] -= tag_det_offset[0];
+	tag_det[1] -= tag_det_offset[1];
+
 }
