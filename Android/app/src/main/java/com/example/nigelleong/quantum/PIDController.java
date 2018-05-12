@@ -47,7 +47,7 @@ public class PIDController extends AppCompatActivity implements View.OnClickList
         btnGoTo505090.setOnClickListener(this);
         btnGoTo100125180.setOnClickListener(this);
         btnGoTo2510090.setOnClickListener(this);
-        btnGoTo2510090 .setOnClickListener(this);
+        btnGoTo000 .setOnClickListener(this);
 
 
         //Switch to PID position control (state = 5);
@@ -87,7 +87,7 @@ public class PIDController extends AppCompatActivity implements View.OnClickList
                 moveTo2510090();
                 break;
             case R.id.btn_goto000:
-                mobeTo000();
+                moveTo000();
                 break;
             default:
                 break;
@@ -119,7 +119,7 @@ public class PIDController extends AppCompatActivity implements View.OnClickList
     private void moveTo2510090() {
         if (btSocket!=null) {
             try {
-                btSocket.getOutputStream().write("T|250|100|-90!".getBytes());
+                btSocket.getOutputStream().write("T|250|1000|-90!".getBytes());
                 toastMsg("Command 'Go to Position 25 100 -90' sent");
             } catch (IOException e) {
                 toastMsg("Error");
@@ -127,7 +127,7 @@ public class PIDController extends AppCompatActivity implements View.OnClickList
         }
     }
 
-    private void mobeTo000() {
+    private void moveTo000() {
         if (btSocket!=null) {
             try {
                 btSocket.getOutputStream().write("T|0|0|0!".getBytes());
