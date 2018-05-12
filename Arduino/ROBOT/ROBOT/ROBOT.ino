@@ -119,7 +119,7 @@ double zero = 0;
 // Create PID for position Control
 double Kp_Pose_xy = 2, Ki_Pose_xy = 0.8, Kd_Pose_xy = 0;
 PID PID_x(&zero, &v[0], &Robot_Pose.toGo_local[0], Kp_Pose_xy, Ki_Pose_xy, Kd_Pose_xy, DIRECT);
-double Kp_Pose_theta = 1.7, Ki_Pose_theta = 0.6, Kd_Pose_theta = 0.1;
+double Kp_Pose_theta = 1.7, Ki_Pose_theta = 0.6, Kd_Pose_theta = 0;
 PID PID_theta(&Robot_Pose.globalPose[2], &v[2], &Robot_Pose.globalPose_should[2], Kp_Pose_theta, Ki_Pose_theta, Kd_Pose_theta, DIRECT);
 PID PID_heading(&Robot_Pose.globalPose[2], &v[2], &Robot_Pose.heading_angle, Kp_Pose_theta, Ki_Pose_theta, Kd_Pose_theta, DIRECT);
 
@@ -291,7 +291,7 @@ void loop() {
         case 'P': // Set global pose according to arguments
         {
           set_global_pose((float)arg1,(float)arg2,(float)arg3);
-//          print_globalPose();
+          print_globalPose();
           break;
         }
         default: {state = 0; break;}// Stay in STANDBY 
@@ -318,7 +318,7 @@ void loop() {
 		case 'P': // Set global pose according to arguments
         {
           set_global_pose((float)arg1,(float)arg2,(float)arg3);
-//          print_globalPose();
+          print_globalPose();
           break;
         }
         case 'M': //Moving with velocities defined by arg1-3 for a certain time
@@ -428,7 +428,7 @@ void loop() {
         case 'P': // Set global pose according to arguments
         {
           set_global_pose((float)arg1,(float)arg2,(float)arg3);
-//          print_globalPose();
+          print_globalPose();
           break;
         }
         case 'M': //Moving with velocities defined by arg1-3 for a certain time
@@ -458,8 +458,7 @@ void loop() {
           //time_prev NEEDED for localization: Before starting localization always ste time_prev to millis!!
           time_prev = millis();
           localize_Robot();
-          while(command=='M'){
-            read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);
+          while(command=='M'){            
             if(remote_local){  
               // Calculations of wheel speeds (speeds are local)
               v[0] = 0.7*v_max_x*arg1/100;
@@ -483,7 +482,8 @@ void loop() {
             localize_Robot();  
             if(!DC_STOP){// Compute PID results for DC motors and run DC motors
               run_DC();
-            }         
+            }
+            read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);         
           }
           localize_Robot();         
           break;
@@ -531,7 +531,7 @@ void loop() {
         case 'P': // Set global pose according to arguments
         {
           set_global_pose((float)arg1,(float)arg2,(float)arg3);
-//          print_globalPose();
+          print_globalPose();
           break;
         }
         case 'T': //'T': target position
@@ -575,6 +575,7 @@ void loop() {
               // ROTATE to head to target
               DC_STOP = false;
               PID_heading.Initialize();
+              Serial.println("Rotating to head to target");
               while(fabs(Robot_Pose.globalPose[2]-Robot_Pose.heading_angle)>Pose_error_theta){
                 if(fabs(Robot_Pose.globalPose[2]-Robot_Pose.heading_angle)<PID_dis_theta){
                   PID_heading.Compute();
@@ -600,9 +601,10 @@ void loop() {
                 Robot_Pose.calctoGo_local();
               }
               DC_STOP = allWheelsSTOP();
-              DC_STOP = false;
+              
               
               // DRIVE Forward
+              DC_STOP = false;
               PID_x.Initialize();
               Serial.println("Driving forward");
               while(fabs(Robot_Pose.toGo_local[0])>Pose_error_xy){
@@ -627,11 +629,11 @@ void loop() {
                 Robot_Pose.calctoGo_local();
               }
               DC_STOP = allWheelsSTOP();
-              DC_STOP = false;
             }
             
 
             // ROTATE
+            DC_STOP = false;
             PID_theta.Initialize();
             Serial.println("Rotate");
             while(fabs(Robot_Pose.toGo_local[2])>Pose_error_theta){
@@ -891,7 +893,7 @@ void change_state(int arg1){
     }  
     case 5: 
     {
-      change_loc_method(2);
+      change_loc_method(0);
       break;
     }          
   }
@@ -989,35 +991,7 @@ void run_DC(){
   DC_2.map_wheelspeed(w[1],PID_Out_DC[1]);
   DC_3.map_wheelspeed(w[2],PID_Out_DC[2]);
   DC_4.map_wheelspeed(w[3],PID_Out_DC[3]);
-  //DEBUG
-  Serial.print(" v= ");
-  Serial.print(v[0]);
-    Serial.print("\t");
-  Serial.print(v[1]);
-  Serial.print("\t");
-  Serial.println(v[2]);
-  
-  
-  Serial.print("w1 w4 = ");
-  Serial.print(w[0]);
-  Serial.print("\t");
-  Serial.println(w[3]);
-  
-  Serial.print("PID_OUT = ");
-  Serial.print(PID_Out_DC[0]);
-  Serial.print("\t");
-  Serial.println(PID_Out_DC[3]);
 
-  Serial.print("Direction = ");
-  Serial.print(DC_1.dir);
-  Serial.print("\t");
-  Serial.println(DC_4.dir);
-
-  Serial.print("Mapped Speed = ");
-  Serial.print(DC_1.mapped_speed);
-  Serial.print("\t");
-  Serial.println(DC_4.mapped_speed);
-  
   // Run DC-motors
   digitalWrite(DC_1.pin_dir, DC_1.dir);
   analogWrite(DC_1.pin_speed, DC_1.mapped_speed);
@@ -1478,7 +1452,7 @@ void debug_Kalman_NFC(){
 }
 
 void set_global_pose(float arg1,float arg2,float arg3){
-  Robot_Pose.setglobalPose(arg1,arg2,arg3*pi/180);
+  Robot_Pose.setglobalPose(arg1,arg2,arg3);
   print_globalPose();
   // Set detected tag to current position --> "Virtual tags"
   KalmanNFC.tag_det[0] = Robot_Pose.globalPose[0];
