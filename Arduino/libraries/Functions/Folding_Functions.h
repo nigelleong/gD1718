@@ -252,7 +252,15 @@ void do_Wings(int arg1, int arg2){
 }
 
 void do_Seats(int arg1, int arg2){
-  if(arg1==3){
+  if(arg1==4){
+	if(arg2==1){
+		foldSeats_RL_up();
+	}
+	else if(arg2==0){
+		foldSeats_RL_down();
+	}
+  }
+  else if(arg1==3){
     if(arg2==1){
       foldSeats_up();
     }
