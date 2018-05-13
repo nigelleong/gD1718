@@ -132,17 +132,17 @@ const double v_max_theta = 0.6;
 const double PID_dis_xy = 50;
 const double PID_dis_theta = 0.3;
 // Allowed Pose Error:
-const float Pose_error_xy = 6;
+const float Pose_error_xy = 10;
 const float Pose_error_theta = 0.01;
 
 // Print settings
 bool print_to_COM = true;// true; //Print data da serial port (computer)
 bool print_commands = false;
 // Arguments from remote control can either be in local frame or global frame:
-bool remote_local = false;
+bool remote_local = true;
 // Use NFC tags for angle estimation
 bool NFC_angle = false;
-float Reader_Offset[3] = {-100,-100,0};
+float Reader_Offset[3] = {0,-80,0};
 
 // States of the robot
 int state;
@@ -893,7 +893,7 @@ void change_state(int arg1){
     }  
     case 5: 
     {
-      change_loc_method(0);
+      change_loc_method(2);
       break;
     }          
   }

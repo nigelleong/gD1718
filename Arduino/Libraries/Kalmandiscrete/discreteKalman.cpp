@@ -157,7 +157,7 @@ void discreteKalman::updateErrorModel(){
 void discreteKalman::offset_Reader(Pose SRT_Pose){
 	float tag_det_offset[3];
 	Matrix.Multiply((float*) SRT_Pose.Trafo_inv, (float*) Reader_Offset, 3, 3, 1, (float*) tag_det_offset);
-	tag_det[0] -= tag_det_offset[0];
-	tag_det[1] -= tag_det_offset[1];
+	tag_det[0] += tag_det_offset[0];
+	tag_det[1] += tag_det_offset[1];
 
 }
