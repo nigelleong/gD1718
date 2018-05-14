@@ -6,14 +6,6 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <!--<Button-->
-        <!--android:id="@+id/btn_layout_standby"-->
-        <!--android:layout_width="wrap_content"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:text="Standby"-->
-        <!--tools:layout_editor_absoluteX="177dp"-->
-        <!--tools:layout_editor_absoluteY="201dp" />-->
-
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -25,7 +17,8 @@
             android:layout_height="wrap_content"
             android:text="efficiency"
             android:layout_centerHorizontal="true"
-            android:layout_margin="10dp"/>
+            android:layout_margin="10dp"
+            android:background="@drawable/greeneclipse"/>
 
         <Button
             android:id="@+id/btn_communication"
@@ -34,7 +27,8 @@
             android:text="communication"
             android:layout_centerHorizontal="true"
             android:layout_below="@+id/btn_efficiency"
-            android:layout_margin="10dp"/>
+            android:layout_margin="10dp"
+            android:background="@drawable/greeneclipse"/>
 
         <Button
             android:id="@+id/btn_privacy"
@@ -43,7 +37,8 @@
             android:text="Privacy"
             android:layout_centerHorizontal="true"
             android:layout_below="@+id/btn_communication"
-            android:layout_margin="10dp"/>
+            android:layout_margin="10dp"
+            android:background="@drawable/greeneclipse"/>
 
     </RelativeLayout>
 
