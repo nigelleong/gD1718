@@ -28,7 +28,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
             android:layout_marginRight="30dp"
-            android:background="@drawable/greeneclipse"
+            android:background="@drawable/whiteeclipse"
             android:text="Let's Hyperform" />
 
         <Button
@@ -39,7 +39,7 @@
             android:layout_alignParentRight="true"
             android:layout_marginTop="25dp"
             android:layout_marginRight="30dp"
-            android:background="@drawable/greeneclipse"
+            android:background="@drawable/whiteeclipse"
             android:text="@string/btn_demo" />
 
     </RelativeLayout>
