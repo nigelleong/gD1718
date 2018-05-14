@@ -1,3 +1,11 @@
 <resources>
     <dimen name="fab_margin">16dp</dimen>
+
+    <dimen name="descriptionFont">20sp</dimen>
+    <dimen name="labelFont">16sp</dimen>
+    <dimen name="infoFont">12sp</dimen>
+
+    <dimen name="map_dx">0dp</dimen>
+    <dimen name="map_dy">-100dp</dimen>
+
 </resources>

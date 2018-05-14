@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/greenimgframe"
+        android:layout_margin="20dp"
+        android:padding="30dp">
+
+        <ImageView
+            android:id="@+id/img_layoutEfficiency"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/layout_efficiency"
+            android:scaleType="fitXY"
+            android:adjustViewBounds="true"
+            android:padding="10dp"/>
+
+        <ImageView
+            android:id="@+id/img_layoutEfficiencyInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/layout_efficiency_info"
+            android:scaleType="fitXY"
+            android:adjustViewBounds="true"
+            android:layout_below="@+id/img_layoutEfficiency"
+            android:layout_centerHorizontal="true"
+            android:padding="10dp"/>
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/txt_eff_mod_description"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:textSize="@dimen/descriptionFont"
+            android:textColor="@color/fontAgainstWhite"
+            android:gravity="center"
+            android:layout_centerHorizontal="true"
+            android:text="@string/eff_mod_description"/>
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="30dp"
+        android:paddingBottom="15dp">
+
+        <TextView
+            android:id="@+id/txt_eff_mod_capacity_lbl"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/labelFont"
+            android:layout_toLeftOf="@+id/txt_eff_mod_nearest"
+            android:layout_marginEnd="30dp"
+            android:textColor="@color/fontAgainstWhite"
+            android:text="@string/mod_capacity"/>
+
+        <TextView
+            android:id="@+id/txt_eff_mod_capacity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textSize="@dimen/infoFont"
+            android:layout_toLeftOf="@+id/txt_eff_mod_nearest"
+            android:layout_below="@+id/txt_eff_mod_capacity_lbl"
+            android:layout_marginEnd="30dp"
+            android:textColor="@color/fontAgainstWhite"
+            android:text="@string/eff_mod_capacity"/>
+
+        <TextView
+            android:id="@+id/txt_eff_mod_nearest_lbl"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/labelFont"
+            android:textColor="@color/fontAgainstWhite"
+            android:layout_centerHorizontal="true"
+            android:text="@string/mod_nearest"/>
+
+        <TextView
+            android:id="@+id/txt_eff_mod_nearest"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textSize="@dimen/infoFont"
+            android:textColor="@color/fontAgainstWhite"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/txt_eff_mod_nearest_lbl"
+            android:text="@string/eff_mod_nearest"/>
+
+        <TextView
+            android:id="@+id/txt_eff_mod_eta_lbl"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/fontAgainstWhite"
+            android:textSize="@dimen/labelFont"
+            android:layout_marginStart="30dp"
+            android:layout_toRightOf="@+id/txt_eff_mod_nearest"
+            android:text="@string/mod_eta"/>
+
+        <TextView
+            android:id="@+id/txt_eff_mod_eta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textColor="@color/fontAgainstWhite"
+            android:textSize="@dimen/infoFont"
+            android:layout_marginStart="30dp"
+            android:layout_below="@+id/txt_eff_mod_eta_lbl"
+            android:layout_toRightOf="@+id/txt_eff_mod_nearest"
+            android:text="@string/eff_mod_eta"/>
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="15dp"
+        android:paddingBottom="15dp">
+
+        <Button
+            android:id="@+id/btn_book_eff_mod"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:text="Book Now"
+            android:textColor="@color/colorPrimary"
+            android:background="@drawable/whiteeclipse"
+            android:layout_marginTop="15dp"
+            android:layout_marginBottom="15dp"/>
+
+    </RelativeLayout>
+
+</LinearLayout>

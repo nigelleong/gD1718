@@ -9,8 +9,39 @@
 
     <string name="productName">HyperForm</string>
 
-    <!--Standby Activity Layout-->
+    <!--Home Activity Layout-->
     <string name="connect_btn_str">Connect HyperForm</string>
     <string name="productDescription">In a collaboration of 8 students from TUM and NTU, asoub wewpiug asponpwoeu awpoeugb asa.\n\n Brought to you by team quaNTUM</string>
+
+    <!--After Connecting Activity Layout-->
+    <string name="btn_demo">App Demo</string>
+    <string name="title_activity_maps">Map</string>
+
+    <!--Map Layout-->
+    <string name="setStartingPoint">Set as Starting Point</string>
+    <string name="setDestination">Set as Destination Point</string>
+
+    <!-- Module Layout-->
+    <string name="mod_capacity">Capacity</string>
+    <string name="mod_nearest">Nearest Module</string>
+    <string name="mod_eta">ETA</string>
+
+    <!--Efficiency Module Layout-->
+    <string name="eff_mod_description">Designed with space efficiency in mind.\nBest suited for maximum capacity.</string>
+    <string name="eff_mod_capacity">30 pax</string>
+    <string name="eff_mod_nearest">3.5km from you</string>
+    <string name="eff_mod_eta">36 mins</string>
+
+    <!--Communication Module Layout-->
+    <string name="com_mod_description">Designed with communication and interaction in mind.\nBest suited for groups and families.</string>
+    <string name="com_mod_capacity">21 pax</string>
+    <string name="com_mod_nearest">1.8km from you</string>
+    <string name="com_mod_eta">11 mins</string>
+
+    <!--Private Module Layout-->
+    <string name="priv_mod_description">Designed with privacy in mind.\nBest suited for business and work.</string>
+    <string name="priv_mod_capacity">8 pax</string>
+    <string name="priv_mod_nearest">2.3km from you</string>
+    <string name="priv_mod_eta">16 mins</string>
 
 </resources>

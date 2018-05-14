@@ -24,7 +24,7 @@ import java.util.UUID;
 
 public class afterPairing extends AppCompatActivity implements View.OnClickListener {
 
-    Button btnStart;
+    Button btnStart, btnDemo;
 
     String address = null;
     private ProgressDialog progress;
@@ -55,8 +55,10 @@ public class afterPairing extends AppCompatActivity implements View.OnClickListe
 //        Log.d("afterPairing",btSocket.toString());
 
         btnStart = (Button)findViewById(R.id.btn_start);
+        btnDemo = (Button)findViewById(R.id.btn_demo);
 
         btnStart.setOnClickListener(this);
+        btnDemo.setOnClickListener(this);
 
         new ConnectBT().execute();
     }
@@ -67,6 +69,10 @@ public class afterPairing extends AppCompatActivity implements View.OnClickListe
             case R.id.btn_start:
                 Intent standbyIntent = new Intent(afterPairing.this, standbyController.class);
                 startActivity(standbyIntent);
+                break;
+            case R.id.btn_demo:
+                Intent demoIntent = new Intent(afterPairing.this, demoMap.class);
+                startActivity(demoIntent);
                 break;
             default:
                 break;

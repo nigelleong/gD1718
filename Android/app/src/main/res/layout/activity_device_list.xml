@@ -60,7 +60,7 @@
             android:layout_below="@+id/txt_productDescription"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="50dp"
-            android:background="@drawable/circle"
+            android:background="@drawable/greeneclipse"
             android:drawableTop="@drawable/ic_connect"
             android:onClick="onClick"
             android:textStyle=""

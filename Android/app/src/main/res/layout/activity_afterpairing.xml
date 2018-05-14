@@ -12,4 +12,13 @@
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         android:text="Let's Hyperform" />
+
+    <Button
+        android:id="@+id/btn_demo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:layout_below="@+id/btn_start"
+        android:text="@string/btn_demo" />
+
 </RelativeLayout>
