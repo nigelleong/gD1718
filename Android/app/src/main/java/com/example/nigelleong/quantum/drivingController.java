@@ -14,6 +14,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.example.nigelleong.quantum.helper.GlobalState;
+
 import java.io.IOException;
 
 public class drivingController extends AppCompatActivity implements View.OnClickListener {
@@ -21,7 +23,7 @@ public class drivingController extends AppCompatActivity implements View.OnClick
     Button btnUp, btnDown, btnLeft, btnRight, btnStandby, btnReset, btnOdo, btnOdoIMU, btnOdoIMUNFC, btnClockwise, btnCounterClockwise;
 
     BluetoothSocket btSocket;
-    BluetoothSocketHelper bluetoothSocketHelper;
+    GlobalState globalState;
 
     byte[] buffer = new byte[1024];  // buffer store for the stream
     int bytes; // bytes returned from read()
@@ -32,8 +34,8 @@ public class drivingController extends AppCompatActivity implements View.OnClick
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_driving);
 
-        bluetoothSocketHelper = ((BluetoothSocketHelper) getApplicationContext());
-        btSocket = bluetoothSocketHelper.getBluetoothSocket();
+        globalState = ((GlobalState) getApplicationContext());
+        btSocket = globalState.getBluetoothSocket();
         Log.d("drivingController",btSocket.toString());
 
         btnUp = (Button)findViewById(R.id.btn_up);

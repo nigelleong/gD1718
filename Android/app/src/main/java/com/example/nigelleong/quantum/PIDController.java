@@ -14,6 +14,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.example.nigelleong.quantum.helper.GlobalState;
+
 import java.io.IOException;
 
 public class PIDController extends AppCompatActivity implements View.OnClickListener {
@@ -21,7 +23,7 @@ public class PIDController extends AppCompatActivity implements View.OnClickList
     Button btnGoTo505090, btnGoTo100125180, btnGoTo2510090, btnGoTo000;
 
     BluetoothSocket btSocket;
-    BluetoothSocketHelper bluetoothSocketHelper;
+    GlobalState globalState;
 
     byte[] buffer = new byte[1024];  // buffer store for the stream
     int bytes; // bytes returned from read()
@@ -32,8 +34,8 @@ public class PIDController extends AppCompatActivity implements View.OnClickList
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pid);
 
-        bluetoothSocketHelper = ((BluetoothSocketHelper) getApplicationContext());
-        btSocket = bluetoothSocketHelper.getBluetoothSocket();
+        globalState = ((GlobalState) getApplicationContext());
+        btSocket = globalState.getBluetoothSocket();
         Log.d("PIDController",btSocket.toString());
 
 //        btnStandby = (Button)findViewById(R.id.btn_pid_standby);

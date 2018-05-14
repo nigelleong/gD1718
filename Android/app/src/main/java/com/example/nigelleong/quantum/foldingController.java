@@ -8,6 +8,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.example.nigelleong.quantum.helper.GlobalState;
+
 import java.io.IOException;
 
 /**
@@ -20,7 +22,7 @@ public class foldingController extends AppCompatActivity implements View.OnClick
     Button btnFoldUpLeft, btnFoldUpMiddle, btnFoldUpRight, btnFoldDownLeft, btnFoldDownMiddle, btnFoldDownRight;
 
     BluetoothSocket btSocket;
-    BluetoothSocketHelper bluetoothSocketHelper;
+    GlobalState globalState;
 
     byte[] buffer = new byte[1024];  // buffer store for the stream
     int bytes; // bytes returned from read()
@@ -30,8 +32,8 @@ public class foldingController extends AppCompatActivity implements View.OnClick
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_folding);
 
-        bluetoothSocketHelper = ((BluetoothSocketHelper) getApplicationContext());
-        btSocket = bluetoothSocketHelper.getBluetoothSocket();
+        globalState = ((GlobalState) getApplicationContext());
+        btSocket = globalState.getBluetoothSocket();
         Log.d("foldingController",btSocket.toString());
 
         btnOpenWingLeft = (Button)findViewById(R.id.btn_open_wing_left);

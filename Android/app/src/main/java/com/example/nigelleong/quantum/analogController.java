@@ -10,12 +10,13 @@ import android.support.v7.app.AppCompatActivity;
 
 import android.bluetooth.BluetoothSocket;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.os.SystemClock;
+
+import com.example.nigelleong.quantum.helper.GlobalState;
 
 import java.io.IOException;
 
@@ -26,7 +27,7 @@ public class analogController extends AppCompatActivity implements View.OnClickL
     Button btnOdo, btnOdoIMU;
 
     BluetoothSocket btSocket;
-    BluetoothSocketHelper bluetoothSocketHelper;
+    GlobalState globalState;
     SystemClock time;
 
     byte[] buffer = new byte[1024];  // buffer store for the stream
@@ -47,8 +48,8 @@ public class analogController extends AppCompatActivity implements View.OnClickL
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_analog);
 
-        bluetoothSocketHelper = ((BluetoothSocketHelper) getApplicationContext());
-        btSocket = bluetoothSocketHelper.getBluetoothSocket();
+        globalState = ((GlobalState) getApplicationContext());
+        btSocket = globalState.getBluetoothSocket();
         Log.d("analogController",btSocket.toString());
 
         btnOdo = (Button)findViewById(R.id.btn_odo);

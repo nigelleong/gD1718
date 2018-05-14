@@ -14,7 +14,7 @@
     <string name="productDescription">In a collaboration of 8 students from TUM and NTU, asoub wewpiug asponpwoeu awpoeugb asa.\n\n Brought to you by team quaNTUM</string>
 
     <!--After Connecting Activity Layout-->
-    <string name="btn_demo">App Demo</string>
+    <string name="btn_demo">Demo</string>
     <string name="title_activity_maps">Map</string>
 
     <!--Map Layout-->
@@ -33,7 +33,7 @@
     <string name="eff_mod_eta">36 mins</string>
 
     <!--Communication Module Layout-->
-    <string name="com_mod_description">Designed with communication and interaction in mind.\nBest suited for groups and families.</string>
+    <string name="com_mod_description">Designed with user interactions in mind.\nBest suited for groups and families.</string>
     <string name="com_mod_capacity">21 pax</string>
     <string name="com_mod_nearest">1.8km from you</string>
     <string name="com_mod_eta">11 mins</string>

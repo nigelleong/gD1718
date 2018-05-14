@@ -19,6 +19,8 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.os.AsyncTask;
 
+import com.example.nigelleong.quantum.helper.GlobalState;
+
 import java.io.IOException;
 import java.util.UUID;
 
@@ -31,7 +33,7 @@ public class afterPairing extends AppCompatActivity implements View.OnClickListe
     BluetoothAdapter myBluetooth = null;
 
     BluetoothSocket btSocket = null;
-    BluetoothSocketHelper bluetoothSocketHelper;
+    GlobalState globalState;
 
     private boolean isBtConnected = false;
     public static String EXTRA_BT_SOCKET = "bluetooth_socket";
@@ -51,8 +53,7 @@ public class afterPairing extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_afterpairing);
 
         address = getIntent().getStringExtra(deviceListController.EXTRA_ADDRESS);
-        bluetoothSocketHelper = ((BluetoothSocketHelper) getApplicationContext());
-//        Log.d("afterPairing",btSocket.toString());
+        globalState = ((GlobalState) getApplicationContext());
 
         btnStart = (Button)findViewById(R.id.btn_start);
         btnDemo = (Button)findViewById(R.id.btn_demo);
@@ -133,7 +134,7 @@ public class afterPairing extends AppCompatActivity implements View.OnClickListe
                 toastMsg("Connected!");
                 isBtConnected = true;
                 Log.d("standbyController",btSocket.toString());
-                bluetoothSocketHelper.setBluetoothSocket(btSocket);
+                globalState.setBluetoothSocket(btSocket);
             }
             progress.dismiss();
         }

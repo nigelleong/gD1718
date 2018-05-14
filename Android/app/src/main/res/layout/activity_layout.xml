@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
     <!--<Button-->
         <!--android:id="@+id/btn_layout_standby"-->
@@ -13,27 +14,37 @@
         <!--tools:layout_editor_absoluteX="177dp"-->
         <!--tools:layout_editor_absoluteY="201dp" />-->
 
-    <Button
-        android:id="@+id/btn_privacy"
-        android:layout_width="wrap_content"
+    <RelativeLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="PRIVACY"
-        tools:layout_editor_absoluteX="148dp"
-        tools:layout_editor_absoluteY="76dp" />
+        android:layout_margin="20dp">
 
-    <Button
-        android:id="@+id/btn_efficiency"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="efficiency"
-        tools:layout_editor_absoluteX="142dp"
-        tools:layout_editor_absoluteY="259dp" />
+        <Button
+            android:id="@+id/btn_efficiency"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="efficiency"
+            android:layout_centerHorizontal="true"
+            android:layout_margin="10dp"/>
 
-    <Button
-        android:id="@+id/btn_communication"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="communication"
-        tools:layout_editor_absoluteX="122dp"
-        tools:layout_editor_absoluteY="439dp" />
-</android.support.constraint.ConstraintLayout>
+        <Button
+            android:id="@+id/btn_communication"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="communication"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/btn_efficiency"
+            android:layout_margin="10dp"/>
+
+        <Button
+            android:id="@+id/btn_privacy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Privacy"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/btn_communication"
+            android:layout_margin="10dp"/>
+
+    </RelativeLayout>
+
+</LinearLayout>
