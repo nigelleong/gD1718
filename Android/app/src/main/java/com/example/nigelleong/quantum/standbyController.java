@@ -112,6 +112,10 @@ public class standbyController extends AppCompatActivity implements View.OnClick
                         if (checkPoseValidity(pose_x, pose_y, pose_rot)){
                             Log.d("pose", "P|" + pose_x + "|" + pose_y + "|" + pose_rot + "!");
                             btSocket.getOutputStream().write(("P|" + pose_x + "|" + pose_y + "|" + pose_rot + "!").getBytes());
+                            toastMsg("Pose resetted");
+                            txtPoseX.setText("");
+                            txtPoseY.setText("");
+                            txtPoseRot.setText("");
                         }
                     } catch (IOException e) {
                         toastMsg("Error");
