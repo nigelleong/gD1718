@@ -64,7 +64,6 @@ void Pose::newPoseOdometry(float * w_is_sign, Mecanum SRT_Mecanum, float delta_t
 	}
 }
 
-// Calculate new pose from NFC tag
 
 
 // Calculate new orientation from IMU data only
@@ -87,6 +86,15 @@ void Pose::calctoGo_local(){
 	toGo_global[2] = globalPose_should[2] - globalPose[2];
 	Matrix.Multiply((float*) Trafo_inv, (float*) toGo_global, 3, 3, 1, (float*) toGo_local );
 	heading_angle = atan2(toGo_global[1],toGo_global[0]);
+	if(fabs(heading_angle-globalPose[2])>pi/2){
+		heading_angle += pi;
+		if(heading_angle>pi){
+			heading_angle = -2*pi + heading_angle;
+		}
+		else if(heading_angle<-pi){
+			heading_angle = 2*pi + heading_angle;
+		}
+	}
 }
 
 void Pose::speed_to_local_v(float * v, float x_global, float y_global, float w_global){

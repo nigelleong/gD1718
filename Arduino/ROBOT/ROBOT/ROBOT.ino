@@ -37,7 +37,7 @@ const int PID_sample_time = 50;
 
 // Steps, Step times and step delays for
 const int steps_Wings = 49*51;
-const int steps_Seats = 500; 
+const int steps_Seats = 1100; 
 const int stepTime_Wings = 8000; // With gearbox:8000; //Microseconds
 const int stepDelay_Wings = 1; // With gearbox: 1; //Milliseconds
 const int stepTime_Seats = 8000; // Microseconds
@@ -88,6 +88,9 @@ DC_motor DC_4(DC_M4_Dir, DC_M4_Speed, translation);
 bool DC_STOP;
 bool Stepper_STOP; 
 bool Magnets_ACTIVE;
+
+
+  bool tag_detected = false;
 
 // Create Encoders
 Encoder Encoder_1(counts_per_round);
@@ -221,6 +224,8 @@ void setup() {
   pinMode(DC_M2_Speed, OUTPUT);
   pinMode(DC_M3_Speed, OUTPUT);
   pinMode(DC_M4_Speed, OUTPUT);
+  pinMode(DC_Enable, OUTPUT);
+  digitalWrite(DC_Enable, HIGH);
   DC_STOP = allWheelsSTOP();
   
   //Magnet
@@ -271,6 +276,7 @@ void setup() {
   PID_x.SetOutputLimit(-0.5*v_max_x, 0.5*v_max_x);
   PID_theta.SetOutputLimit(-0.5*v_max_theta, 0.5*v_max_theta);
   PID_heading.SetOutputLimit(-0.5*v_max_theta, 0.5*v_max_theta);
+
 }
 
 void loop() {  
@@ -980,10 +986,10 @@ void Init_IMU_RFID(){
   devStatus = mpu.dmpInitialize();
 
     // supply your own gyro offsets here, scaled for min sensitivity
-  mpu.setXGyroOffset(101); //102
-  mpu.setYGyroOffset(-28); //-29
-  mpu.setZGyroOffset(39); //39
-  mpu.setZAccelOffset(1509); // 1510
+  mpu.setXGyroOffset(34); 
+  mpu.setYGyroOffset(35); 
+  mpu.setZGyroOffset(14); 
+  mpu.setZAccelOffset(1665); // 
 
   // make sure it worked (returns 0 if so)
   if (devStatus == 0) {
@@ -1074,6 +1080,7 @@ void localize_Robot(){
       else{
         read_tag(&tag_x,&tag_y);
         KalmanNFC.newTagdetected((float)tag_x, (float)tag_y);
+        tag_detected = true;
         KalmanNFC.offset_Reader(Robot_Pose);
         if(print_to_COM){
           Serial.print("Tag: x = ");
@@ -1581,37 +1588,45 @@ void GoToTarget(){
         run_DC();
       }
       localize_Robot();
+      if(tag_detected){
+        break;
+      }
       Robot_Pose.calctoGo_local();
     }
     DC_STOP = allWheelsSTOP();
     
-    
-    // DRIVE Forward
-    DC_STOP = false;
-    PID_x.Initialize();
-    Serial.println("Driving forward");
-    while(fabs(Robot_Pose.toGo_local[0])>Pose_error_xy){
-      if(fabs(Robot_Pose.toGo_local[0])<PID_dis_xy){
-        PID_x.Compute();
-      }
-      else{
-        v[0] = 0.5*sgn(Robot_Pose.toGo_local[0])*v_max_x;
-      }
-      // Drive Robot
-      if(v[0]==0&&v[1]==0&&v[2]==0){
-        DC_STOP = allWheelsSTOP();
-      }
-      // Calculate desired wheels speeds WITH SIGN
-      SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
-      // Desired wheel speeds WITHOUT SIGN (needed for PID controller
-      SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
-      if(!DC_STOP){
-        run_DC();
-      }
-      localize_Robot();
-      Robot_Pose.calctoGo_local();
+    if(!tag_detected){
+      // DRIVE Forward
+      DC_STOP = false;
+      PID_x.Initialize();
+      Serial.println("Driving forward");
+      while(fabs(Robot_Pose.toGo_local[0])>Pose_error_xy){
+        if(fabs(Robot_Pose.toGo_local[0])<PID_dis_xy){
+          PID_x.Compute();
+        }
+        else{
+          v[0] = 0.5*sgn(Robot_Pose.toGo_local[0])*v_max_x;
+        }
+        // Drive Robot
+        if(v[0]==0&&v[1]==0&&v[2]==0){
+          DC_STOP = allWheelsSTOP();
+        }
+        // Calculate desired wheels speeds WITH SIGN
+        SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
+        // Desired wheel speeds WITHOUT SIGN (needed for PID controller
+        SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
+        if(!DC_STOP){
+          run_DC();
+        }
+        localize_Robot();
+        if(tag_detected){
+          break;
+        }
+        Robot_Pose.calctoGo_local();
+      }    
+      DC_STOP = allWheelsSTOP();
     }
-    DC_STOP = allWheelsSTOP();
+    tag_detected = false;
   }
   
 

@@ -42,3 +42,6 @@ const int Encoder_1_pin = 2;
 const int Encoder_2_pin = 3;
 const int Encoder_3_pin = 18;
 const int Encoder_4_pin = 19;
+
+//Enable DC_Motor drivers
+const int DC_Enable = 4;
