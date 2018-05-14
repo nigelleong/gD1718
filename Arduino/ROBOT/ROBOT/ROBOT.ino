@@ -87,6 +87,7 @@ DC_motor DC_4(DC_M4_Dir, DC_M4_Speed, translation);
 
 bool DC_STOP;
 bool Stepper_STOP; 
+bool Magnets_ACTIVE;
 
 // Create Encoders
 Encoder Encoder_1(counts_per_round);
@@ -132,17 +133,17 @@ const double v_max_theta = 0.6;
 const double PID_dis_xy = 50;
 const double PID_dis_theta = 0.3;
 // Allowed Pose Error:
-const float Pose_error_xy = 6;
+const float Pose_error_xy = 10;
 const float Pose_error_theta = 0.01;
 
 // Print settings
 bool print_to_COM = true;// true; //Print data da serial port (computer)
 bool print_commands = false;
 // Arguments from remote control can either be in local frame or global frame:
-bool remote_local = false;
+bool remote_local = true;
 // Use NFC tags for angle estimation
 bool NFC_angle = false;
-float Reader_Offset[3] = {-100,-100,0};
+float Reader_Offset[3] = {0,-80,0};
 
 // States of the robot
 int state;
@@ -160,8 +161,8 @@ int state;
  int layout;
  /* switch(layout){
   *  case(0): private/moving
-  *  case(1): peak hour lean
-  *  case(2): peak hour seat
+  *  case(1): efficiency
+  *  case(2): communication
  */
 
  // localization method
@@ -176,7 +177,7 @@ int state;
 void setup() {
   // Set states, layout and localization method
   change_state(0);
-  layout = 0;
+  layout = 0; 
   loc_method = 0;
   // Will be set to true when entering state 0 (STANDBY)
   DC_STOP = false;
@@ -207,7 +208,9 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(Encoder_2_pin), doEncoder_2, CHANGE);
   attachInterrupt(digitalPinToInterrupt(Encoder_3_pin), doEncoder_3, CHANGE);
   attachInterrupt(digitalPinToInterrupt(Encoder_4_pin), doEncoder_4, CHANGE);
- 
+
+  
+  
   // Pins for DC-motors
   pinMode(DC_M1_Dir, OUTPUT);
   pinMode(DC_M2_Dir, OUTPUT);
@@ -221,7 +224,9 @@ void setup() {
   
   //Magnet
   pinMode(magnets, OUTPUT);
-  
+  //Active magnets from start
+  digitalWrite(magnets, LOW);
+    
   // Pins for Stepper motors
   pinMode(Wing_R_dir,OUTPUT); 
   pinMode(Wing_L_dir,OUTPUT);
@@ -323,6 +328,7 @@ void loop() {
         }
         case 'M': //Moving with velocities defined by arg1-3 for a certain time
         {
+          Magnets_ACTIVE = deactivate_Magnets();
           DC_STOP = false;
           if(layout!=0){
             if(print_to_COM){
@@ -371,6 +377,7 @@ void loop() {
           }
           DC_STOP = allWheelsSTOP();
           localize_Robot();
+          Magnets_ACTIVE = activate_Magnets();
           break;
         }
         
@@ -433,6 +440,7 @@ void loop() {
         }
         case 'M': //Moving with velocities defined by arg1-3 for a certain time
         {
+          Magnets_ACTIVE = deactivate_Magnets();
           DC_STOP = false;
           print_commands = false;
           if(layout!=0){
@@ -485,7 +493,8 @@ void loop() {
             }
             read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);         
           }
-          localize_Robot();         
+          localize_Robot();   
+          Magnets_ACTIVE = activate_Magnets();      
           break;
         }
         default: {break;} 
@@ -505,7 +514,12 @@ void loop() {
         {
           change_state(arg1);
           break;
-        } 
+        }
+        case 'K': 
+        {
+          change_layout(arg1);
+          break;
+        }
       }
       break;
     }
@@ -548,127 +562,9 @@ void loop() {
             Serial.print("\t theta: ");
             Serial.println(arg3);
           }
-          DC_STOP = false;
-          // Print header for localization results
-          if(print_to_COM){
-            switch(loc_method){
-              case 0: {Serial.println("Pose odometry:   x \t y \t theta"); break;}
-              case 1: {Serial.println("Pose odometry:   x \t y \t theta    Angle IMU:   theta    Pose Kalman:    x \t y \t theta"); break;}
-              case 2: {Serial.println("Pose odometry:   x \t y \t theta    Angle IMU:   theta    Pose Kalman:    x \t y \t theta    Pose Kalman RFID    x \t y \t theta"); break;}    
-            }
-          }
-          // Reset Encoders and Reset FiFo buffer of IMU and get current yaw angle from IMU
-          getEnconderSpeeds(50);
-          mpu.resetFIFO();
-          get_IMU_yaw();
-          yaw_prev_IMU = ypr[0];
-          yaw_prev_Robot = Robot_Pose.globalPose[2];
-          // Calculated distance to go in local system         
-          time = millis();
-          time_prev = millis();
-          localize_Robot();
-          Robot_Pose.calctoGo_local();
-          while((fabs(Robot_Pose.toGo_local[0])>Pose_error_xy||fabs(Robot_Pose.toGo_local[1])>Pose_error_xy||fabs(Robot_Pose.toGo_local[2])>Pose_error_theta )){
-            while((fabs(Robot_Pose.toGo_local[0])>Pose_error_xy||fabs(Robot_Pose.toGo_local[1])>Pose_error_xy )){
-              Robot_Pose.calctoGo_local();
-              
-              // ROTATE to head to target
-              DC_STOP = false;
-              PID_heading.Initialize();
-              Serial.println("Rotating to head to target");
-              while(fabs(Robot_Pose.globalPose[2]-Robot_Pose.heading_angle)>Pose_error_theta){
-                if(fabs(Robot_Pose.globalPose[2]-Robot_Pose.heading_angle)<PID_dis_theta){
-                  PID_heading.Compute();
-                }
-                else if(fabs(Robot_Pose.globalPose[2]-Robot_Pose.heading_angle)>pi){
-                  v[2] = -0.5*sgn(Robot_Pose.heading_angle-Robot_Pose.globalPose[2])*v_max_theta;
-                }
-                else{
-                  v[2] = 0.5*sgn(Robot_Pose.heading_angle-Robot_Pose.globalPose[2])*v_max_theta;
-                }
-                // Drive Robot
-                if(v[0]==0&&v[1]==0&&v[2]==0){
-                  DC_STOP = allWheelsSTOP();
-                }
-                // Calculate desired wheels speeds WITH SIGN
-                SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
-                // Desired wheel speeds WITHOUT SIGN (needed for PID controller
-                SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
-                if(!DC_STOP){
-                  run_DC();
-                }
-                localize_Robot();
-                Robot_Pose.calctoGo_local();
-              }
-              DC_STOP = allWheelsSTOP();
-              
-              
-              // DRIVE Forward
-              DC_STOP = false;
-              PID_x.Initialize();
-              Serial.println("Driving forward");
-              while(fabs(Robot_Pose.toGo_local[0])>Pose_error_xy){
-                if(fabs(Robot_Pose.toGo_local[0])<PID_dis_xy){
-                  PID_x.Compute();
-                }
-                else{
-                  v[0] = 0.5*sgn(Robot_Pose.toGo_local[0])*v_max_x;
-                }
-                // Drive Robot
-                if(v[0]==0&&v[1]==0&&v[2]==0){
-                  DC_STOP = allWheelsSTOP();
-                }
-                // Calculate desired wheels speeds WITH SIGN
-                SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
-                // Desired wheel speeds WITHOUT SIGN (needed for PID controller
-                SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
-                if(!DC_STOP){
-                  run_DC();
-                }
-                localize_Robot();
-                Robot_Pose.calctoGo_local();
-              }
-              DC_STOP = allWheelsSTOP();
-            }
-            
-
-            // ROTATE
-            DC_STOP = false;
-            PID_theta.Initialize();
-            Serial.println("Rotate");
-            while(fabs(Robot_Pose.toGo_local[2])>Pose_error_theta){
-              if(fabs(Robot_Pose.toGo_local[2])<PID_dis_theta){
-                PID_theta.Compute();
-              }
-              else if(fabs(Robot_Pose.toGo_local[2])>pi){
-                v[2] = -0.5*sgn(Robot_Pose.toGo_local[2])*v_max_theta;
-              }
-              else{
-                v[2] = 0.5*sgn(Robot_Pose.toGo_local[2])*v_max_theta;
-              }
-
-              // Drive Robot
-              if(v[0]==0&&v[1]==0&&v[2]==0){
-                DC_STOP = allWheelsSTOP();
-              }
-              // Calculate desired wheels speeds WITH SIGN
-              SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
-              // Desired wheel speeds WITHOUT SIGN (needed for PID controller
-              SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
-              if(!DC_STOP){
-                run_DC();
-              }
-              localize_Robot();
-              Robot_Pose.calctoGo_local();
-            }
-            DC_STOP = allWheelsSTOP();
-          }
-          if(print_to_COM){
-            Serial.println("Position reached!!");
-          }
-
+          GoToTarget();
           break;
-        }
+        } 
         default: {break;} 
       }
       break;
@@ -858,6 +754,10 @@ void change_loc_method(int arg1){
   }
 }
 void change_state(int arg1){
+  //activate magnets -> no current
+  if(!Magnets_ACTIVE){
+    Magnets_ACTIVE = activate_Magnets();  
+  }
   // Stop all motors
   if(!DC_STOP){
     DC_STOP = allWheelsSTOP();
@@ -893,7 +793,7 @@ void change_state(int arg1){
     }  
     case 5: 
     {
-      change_loc_method(0);
+      change_loc_method(2);
       break;
     }          
   }
@@ -1187,7 +1087,7 @@ void localize_Robot(){
           //debug_Kalman_NFC();
           Robot_Pose.setglobalPose(KalmanNFC.new_State[0], KalmanNFC.new_State[1], KalmanNFC.new_State[2]);
           // Reset IMU if NFC angle calculation
-          if(NFC_angle){  
+          if(NFC_angle){   
             get_IMU_yaw();
             yaw_prev_IMU = ypr[0];
             yaw_prev_Robot = Robot_Pose.globalPose[2];
@@ -1464,4 +1364,300 @@ void set_global_pose(float arg1,float arg2,float arg3){
     Serial.println(KalmanNFC.tag_det[1]);
   }
 }
-         
+
+//wings first argument: both(2) or left(1) or right(0) wing, second argument open(1) or close(0)
+//for chair(seat): first argument Seat (R&L all left middle right) -> (4 3 2 1 0) & second argument direction (up down): (1 0)
+
+/* layout:
+ * 0 = privacy
+ * 1 = efficiency
+ * 2 = communication
+ */
+
+void change_layout(int arg1){
+  float pos_privacy[3] = {1,1,1};
+  float pos_efficiency[3] = {1,1,1};
+  float pos_communication[3] = {1,1,1};
+  
+  switch(layout){
+    case 0:
+    {
+      switch(arg1){
+        case 0:
+        {
+          if(print_to_COM){
+            Serial.println("You are in Privacy Mode");
+          }
+          break;
+        }
+        case 1:
+        {
+          do_Wings(2,1);
+          do_Seats(1,1);
+          layout = 1;
+          if(print_to_COM){
+            Serial.println("Layout changed to Efficiency");
+          }
+          break;          
+        }
+        case 2:
+        {
+          Robot_Pose.globalPose_should[0] = pos_communication[0];
+          Robot_Pose.globalPose_should[1] = pos_communication[1];
+          Robot_Pose.globalPose_should[2] = pos_communication[2];
+          GoToTarget();
+          do_Wings(2,1);
+          do_Seats(4,0);
+          layout = 2;
+          if(print_to_COM){
+            Serial.println("Layout changed to Communication");
+          }
+          break;
+        }
+        default:
+        {
+          if(print_to_COM){
+            Serial.println("Not a valid layout chosen");
+          }
+          break;
+        }
+      }
+      break;
+    }
+    case 1:
+    {
+      switch(arg1){
+        case 0:
+        { 
+          do_Seats(1,0);
+          do_Wings(2,0);
+          layout = 0;
+          if(print_to_COM){
+            Serial.println("Layout changed to Privacy");
+          }
+          break;
+        }
+        case 1:
+        {
+          if(print_to_COM){
+            Serial.println("You are in Efficiency Mode");
+          }
+          break;
+        }
+        case 2:
+        {
+          do_Seats(1,0);
+          do_Wings(2,0);
+          Robot_Pose.globalPose_should[0] = pos_communication[0];
+          Robot_Pose.globalPose_should[1] = pos_communication[1];
+          Robot_Pose.globalPose_should[2] = pos_communication[2];
+          GoToTarget();
+          do_Wings(2,1);
+          do_Seats(4,0);
+          layout = 2;
+          if(print_to_COM){
+            Serial.println("Layout changed to Communication");
+          }
+          break;
+        }
+        default:
+        {
+          if(print_to_COM){
+            Serial.println("Not a valid layout chosen");
+          }
+          break;
+        }
+      }
+      break;
+    }
+    case 2:
+    {
+      switch(arg1){
+        case 0:
+        { 
+          do_Seats(4,1);
+          do_Wings(2,0);
+          Robot_Pose.globalPose_should[0] = pos_privacy[0];
+          Robot_Pose.globalPose_should[1] = pos_privacy[1];
+          Robot_Pose.globalPose_should[2] = pos_privacy[2];
+          layout = 0;
+          if(print_to_COM){
+            Serial.println("Layout changed to Privacy Mode");
+          }
+          break;
+        }
+        case 1:
+        {
+          do_Seats(4,1);
+          do_Wings(2,0);
+          Robot_Pose.globalPose_should[0] = pos_efficiency[0];
+          Robot_Pose.globalPose_should[1] = pos_efficiency[1];
+          Robot_Pose.globalPose_should[2] = pos_efficiency[2];
+          do_Wings(2,1);
+          do_Seats(1,1);
+          layout = 1;
+          if(print_to_COM){
+            Serial.println("Layout changed to Efficiency Mode");
+          }
+          break;
+        }
+        case 2:
+        {
+          if(print_to_COM){
+            Serial.println("You are in Communication Mode");
+          }
+          break;
+        }
+        default:
+        {
+          if(print_to_COM){
+            Serial.println("Not a valid layout chosen");
+          }
+          break;
+        }
+      }
+      break;
+    }
+    default:
+    {
+      if(print_to_COM){
+        Serial.println("You are not in a valid layout!");
+      }
+      break;
+    }
+  } 
+}
+
+void GoToTarget(){
+  Magnets_ACTIVE = deactivate_Magnets();
+  DC_STOP = false;
+  // Print header for localization results
+  if(print_to_COM){
+    switch(loc_method){
+      case 0: {Serial.println("Pose odometry:   x \t y \t theta"); break;}
+      case 1: {Serial.println("Pose odometry:   x \t y \t theta    Angle IMU:   theta    Pose Kalman:    x \t y \t theta"); break;}
+      case 2: {Serial.println("Pose odometry:   x \t y \t theta    Angle IMU:   theta    Pose Kalman:    x \t y \t theta    Pose Kalman RFID    x \t y \t theta"); break;}    
+    }
+  }
+  // Reset Encoders and Reset FiFo buffer of IMU and get current yaw angle from IMU
+  getEnconderSpeeds(50);
+  mpu.resetFIFO();
+  get_IMU_yaw();
+  yaw_prev_IMU = ypr[0];
+  yaw_prev_Robot = Robot_Pose.globalPose[2];
+  // Calculated distance to go in local system         
+  time = millis();
+  time_prev = millis();
+  localize_Robot();
+  Robot_Pose.calctoGo_local();
+
+  while((fabs(Robot_Pose.toGo_local[0])>Pose_error_xy||fabs(Robot_Pose.toGo_local[1])>Pose_error_xy )){
+    Robot_Pose.calctoGo_local();
+    
+    // ROTATE to head to target
+    DC_STOP = false;
+    PID_heading.Initialize();
+    Serial.println("Rotate to head to target");
+    while(fabs(Robot_Pose.globalPose[2]-Robot_Pose.heading_angle)>Pose_error_theta){
+      if(fabs(Robot_Pose.globalPose[2]-Robot_Pose.heading_angle)<PID_dis_theta){
+        PID_heading.Compute();
+      }
+      else if(fabs(Robot_Pose.globalPose[2]-Robot_Pose.heading_angle)>pi){
+        v[2] = -0.5*sgn(Robot_Pose.heading_angle-Robot_Pose.globalPose[2])*v_max_theta;
+      }
+      else{
+        v[2] = 0.5*sgn(Robot_Pose.heading_angle-Robot_Pose.globalPose[2])*v_max_theta;
+      }
+      // Drive Robot
+      if(v[0]==0&&v[1]==0&&v[2]==0){
+        DC_STOP = allWheelsSTOP();
+      }
+      // Calculate desired wheels speeds WITH SIGN
+      SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
+      // Desired wheel speeds WITHOUT SIGN (needed for PID controller
+      SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
+      if(!DC_STOP){
+        run_DC();
+      }
+      localize_Robot();
+      Robot_Pose.calctoGo_local();
+    }
+    DC_STOP = allWheelsSTOP();
+    
+    
+    // DRIVE Forward
+    DC_STOP = false;
+    PID_x.Initialize();
+    Serial.println("Driving forward");
+    while(fabs(Robot_Pose.toGo_local[0])>Pose_error_xy){
+      if(fabs(Robot_Pose.toGo_local[0])<PID_dis_xy){
+        PID_x.Compute();
+      }
+      else{
+        v[0] = 0.5*sgn(Robot_Pose.toGo_local[0])*v_max_x;
+      }
+      // Drive Robot
+      if(v[0]==0&&v[1]==0&&v[2]==0){
+        DC_STOP = allWheelsSTOP();
+      }
+      // Calculate desired wheels speeds WITH SIGN
+      SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
+      // Desired wheel speeds WITHOUT SIGN (needed for PID controller
+      SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
+      if(!DC_STOP){
+        run_DC();
+      }
+      localize_Robot();
+      Robot_Pose.calctoGo_local();
+    }
+    DC_STOP = allWheelsSTOP();
+  }
+  
+
+  // ROTATE
+  DC_STOP = false;
+  PID_theta.Initialize();
+  Serial.println("Rotate to final position");
+  while(fabs(Robot_Pose.toGo_local[2])>Pose_error_theta){
+    if(fabs(Robot_Pose.toGo_local[2])<PID_dis_theta){
+      PID_theta.Compute();
+    }
+    else if(fabs(Robot_Pose.toGo_local[2])>pi){
+      v[2] = -0.5*sgn(Robot_Pose.toGo_local[2])*v_max_theta;
+    }
+    else{
+      v[2] = 0.5*sgn(Robot_Pose.toGo_local[2])*v_max_theta;
+    }
+
+    // Drive Robot
+    if(v[0]==0&&v[1]==0&&v[2]==0){
+      DC_STOP = allWheelsSTOP();
+    }
+    // Calculate desired wheels speeds WITH SIGN
+    SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
+    // Desired wheel speeds WITHOUT SIGN (needed for PID controller
+    SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
+    if(!DC_STOP){
+      run_DC();
+    }
+    localize_Robot();
+    Robot_Pose.calctoGo_local();
+  }
+  DC_STOP = allWheelsSTOP();
+  Magnets_ACTIVE = activate_Magnets();
+  
+  if(print_to_COM){
+    Serial.println("Position reached!!");
+  }
+}
+
+bool activate_Magnets(){
+  digitalWrite(magnets,LOW);
+  return true;
+}
+bool deactivate_Magnets(){
+  digitalWrite(magnets,HIGH);
+  return false;
+}
+
+
