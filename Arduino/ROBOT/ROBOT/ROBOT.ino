@@ -515,7 +515,7 @@ void loop() {
           change_state(arg1);
           break;
         }
-        case 'L': 
+        case 'K': 
         {
           change_layout(arg1);
           break;
@@ -1550,85 +1550,52 @@ void GoToTarget(){
   time_prev = millis();
   localize_Robot();
   Robot_Pose.calctoGo_local();
-  while((fabs(Robot_Pose.toGo_local[0])>Pose_error_xy||fabs(Robot_Pose.toGo_local[1])>Pose_error_xy||fabs(Robot_Pose.toGo_local[2])>Pose_error_theta )){
-    while((fabs(Robot_Pose.toGo_local[0])>Pose_error_xy||fabs(Robot_Pose.toGo_local[1])>Pose_error_xy )){
-      Robot_Pose.calctoGo_local();
-      
-      // ROTATE to head to target
-      DC_STOP = false;
-      PID_heading.Initialize();
-      Serial.println("Rotating to head to target");
-      while(fabs(Robot_Pose.globalPose[2]-Robot_Pose.heading_angle)>Pose_error_theta){
-        if(fabs(Robot_Pose.globalPose[2]-Robot_Pose.heading_angle)<PID_dis_theta){
-          PID_heading.Compute();
-        }
-        else if(fabs(Robot_Pose.globalPose[2]-Robot_Pose.heading_angle)>pi){
-          v[2] = -0.5*sgn(Robot_Pose.heading_angle-Robot_Pose.globalPose[2])*v_max_theta;
-        }
-        else{
-          v[2] = 0.5*sgn(Robot_Pose.heading_angle-Robot_Pose.globalPose[2])*v_max_theta;
-        }
-        // Drive Robot
-        if(v[0]==0&&v[1]==0&&v[2]==0){
-          DC_STOP = allWheelsSTOP();
-        }
-        // Calculate desired wheels speeds WITH SIGN
-        SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
-        // Desired wheel speeds WITHOUT SIGN (needed for PID controller
-        SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
-        if(!DC_STOP){
-          run_DC();
-        }
-        localize_Robot();
-        Robot_Pose.calctoGo_local();
-      }
-      DC_STOP = allWheelsSTOP();
-      
-      
-      // DRIVE Forward
-      DC_STOP = false;
-      PID_x.Initialize();
-      Serial.println("Driving forward");
-      while(fabs(Robot_Pose.toGo_local[0])>Pose_error_xy){
-        if(fabs(Robot_Pose.toGo_local[0])<PID_dis_xy){
-          PID_x.Compute();
-        }
-        else{
-          v[0] = 0.5*sgn(Robot_Pose.toGo_local[0])*v_max_x;
-        }
-        // Drive Robot
-        if(v[0]==0&&v[1]==0&&v[2]==0){
-          DC_STOP = allWheelsSTOP();
-        }
-        // Calculate desired wheels speeds WITH SIGN
-        SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
-        // Desired wheel speeds WITHOUT SIGN (needed for PID controller
-        SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
-        if(!DC_STOP){
-          run_DC();
-        }
-        localize_Robot();
-        Robot_Pose.calctoGo_local();
-      }
-      DC_STOP = allWheelsSTOP();
-    }
-    
 
-    // ROTATE
+  while((fabs(Robot_Pose.toGo_local[0])>Pose_error_xy||fabs(Robot_Pose.toGo_local[1])>Pose_error_xy )){
+    Robot_Pose.calctoGo_local();
+    
+    // ROTATE to head to target
     DC_STOP = false;
-    PID_theta.Initialize();
-    Serial.println("Rotate");
-    while(fabs(Robot_Pose.toGo_local[2])>Pose_error_theta){
-      if(fabs(Robot_Pose.toGo_local[2])<PID_dis_theta){
-        PID_theta.Compute();
+    PID_heading.Initialize();
+    Serial.println("Rotate to head to target");
+    while(fabs(Robot_Pose.globalPose[2]-Robot_Pose.heading_angle)>Pose_error_theta){
+      if(fabs(Robot_Pose.globalPose[2]-Robot_Pose.heading_angle)<PID_dis_theta){
+        PID_heading.Compute();
       }
-      else if(fabs(Robot_Pose.toGo_local[2])>pi){
-        v[2] = -0.5*sgn(Robot_Pose.toGo_local[2])*v_max_theta;
+      else if(fabs(Robot_Pose.globalPose[2]-Robot_Pose.heading_angle)>pi){
+        v[2] = -0.5*sgn(Robot_Pose.heading_angle-Robot_Pose.globalPose[2])*v_max_theta;
       }
       else{
-        v[2] = 0.5*sgn(Robot_Pose.toGo_local[2])*v_max_theta;
+        v[2] = 0.5*sgn(Robot_Pose.heading_angle-Robot_Pose.globalPose[2])*v_max_theta;
       }
-
+      // Drive Robot
+      if(v[0]==0&&v[1]==0&&v[2]==0){
+        DC_STOP = allWheelsSTOP();
+      }
+      // Calculate desired wheels speeds WITH SIGN
+      SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
+      // Desired wheel speeds WITHOUT SIGN (needed for PID controller
+      SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
+      if(!DC_STOP){
+        run_DC();
+      }
+      localize_Robot();
+      Robot_Pose.calctoGo_local();
+    }
+    DC_STOP = allWheelsSTOP();
+    
+    
+    // DRIVE Forward
+    DC_STOP = false;
+    PID_x.Initialize();
+    Serial.println("Driving forward");
+    while(fabs(Robot_Pose.toGo_local[0])>Pose_error_xy){
+      if(fabs(Robot_Pose.toGo_local[0])<PID_dis_xy){
+        PID_x.Compute();
+      }
+      else{
+        v[0] = 0.5*sgn(Robot_Pose.toGo_local[0])*v_max_x;
+      }
       // Drive Robot
       if(v[0]==0&&v[1]==0&&v[2]==0){
         DC_STOP = allWheelsSTOP();
@@ -1645,7 +1612,40 @@ void GoToTarget(){
     }
     DC_STOP = allWheelsSTOP();
   }
+  
+
+  // ROTATE
+  DC_STOP = false;
+  PID_theta.Initialize();
+  Serial.println("Rotate to final position");
+  while(fabs(Robot_Pose.toGo_local[2])>Pose_error_theta){
+    if(fabs(Robot_Pose.toGo_local[2])<PID_dis_theta){
+      PID_theta.Compute();
+    }
+    else if(fabs(Robot_Pose.toGo_local[2])>pi){
+      v[2] = -0.5*sgn(Robot_Pose.toGo_local[2])*v_max_theta;
+    }
+    else{
+      v[2] = 0.5*sgn(Robot_Pose.toGo_local[2])*v_max_theta;
+    }
+
+    // Drive Robot
+    if(v[0]==0&&v[1]==0&&v[2]==0){
+      DC_STOP = allWheelsSTOP();
+    }
+    // Calculate desired wheels speeds WITH SIGN
+    SRTMecanum.CalcWheelSpeeds((float*)v, (float*)w);
+    // Desired wheel speeds WITHOUT SIGN (needed for PID controller
+    SRTMecanum.WheelSpeeds_NoSign((float*)w, (float*)w_should);
+    if(!DC_STOP){
+      run_DC();
+    }
+    localize_Robot();
+    Robot_Pose.calctoGo_local();
+  }
+  DC_STOP = allWheelsSTOP();
   Magnets_ACTIVE = activate_Magnets();
+  
   if(print_to_COM){
     Serial.println("Position reached!!");
   }
