@@ -6,10 +6,7 @@ package com.example.nigelleong.quantum;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.design.widget.TextInputEditText;
-import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
-import android.text.Editable;
 import android.util.Log;
 
 
@@ -18,13 +15,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
-import android.app.ProgressDialog;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.os.AsyncTask;
+
+import com.example.nigelleong.quantum.helper.GlobalState;
 
 import java.io.IOException;
-import java.util.UUID;
 
 public class standbyController extends AppCompatActivity implements View.OnClickListener {
 
@@ -34,7 +28,7 @@ public class standbyController extends AppCompatActivity implements View.OnClick
     String pose_x, pose_y, pose_rot;
 
     BluetoothSocket btSocket = null;
-    BluetoothSocketHelper bluetoothSocketHelper;
+    GlobalState globalState;
 
     byte[] buffer = new byte[1024];  // buffer store for the stream
     int bytes; // bytes returned from read()
@@ -46,8 +40,8 @@ public class standbyController extends AppCompatActivity implements View.OnClick
         setContentView(R.layout.activity_standby);
 
 
-        bluetoothSocketHelper = ((BluetoothSocketHelper) getApplicationContext());
-        btSocket = bluetoothSocketHelper.getBluetoothSocket();
+        globalState = ((GlobalState) getApplicationContext());
+        btSocket = globalState.getBluetoothSocket();
         Log.d("standbyController", btSocket.toString());
 
         btnDriving = (Button)findViewById(R.id.btn_driving);

@@ -204,6 +204,7 @@ void setup() {
 
   // Initialize Bluetooth
   BT.begin(9600);
+  Serial.print("done");
   // Initialize serial communications with Computer
   Serial.begin(38400);
   

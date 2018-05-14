@@ -4,7 +4,6 @@ package com.example.nigelleong.quantum;
  * Created by nigelleong on 28/4/18.
  */
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
@@ -15,6 +14,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.example.nigelleong.quantum.helper.GlobalState;
+
 import java.io.IOException;
 
 public class layoutController extends AppCompatActivity implements View.OnClickListener {
@@ -22,7 +23,7 @@ public class layoutController extends AppCompatActivity implements View.OnClickL
     Button btnPrivacy, btnEfficiency, btnCommunication;
 
     BluetoothSocket btSocket;
-    BluetoothSocketHelper bluetoothSocketHelper;
+    GlobalState globalState;
 
     byte[] buffer = new byte[1024];  // buffer store for the stream
     int bytes; // bytes returned from read()
@@ -33,8 +34,8 @@ public class layoutController extends AppCompatActivity implements View.OnClickL
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_layout);
 
-        bluetoothSocketHelper = ((BluetoothSocketHelper) getApplicationContext());
-        btSocket = bluetoothSocketHelper.getBluetoothSocket();
+        globalState = ((GlobalState) getApplicationContext());
+        btSocket = globalState.getBluetoothSocket();
         Log.d("layoutController",btSocket.toString());
 
         btnPrivacy = (Button)findViewById(R.id.btn_privacy);

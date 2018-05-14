@@ -1,5 +1,6 @@
 package com.example.nigelleong.quantum;
 
+import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -14,6 +15,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.example.nigelleong.quantum.helper.GlobalState;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -25,12 +27,16 @@ import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.io.IOException;
+
 public class demoMap extends FragmentActivity implements View.OnTouchListener, View.OnClickListener,OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener{
+
+    BluetoothSocket btSocket;
 
     int evalue = 1;
     EditText txtStarting, txtDestination;
     Button btnHire;
-    Marker markerStart = null, markerDestination = null;
+    GlobalState globalState;
 
     private GoogleMap mMap;
     CustomInfoWindowGoogleMap customInfoWindow;
@@ -55,6 +61,9 @@ public class demoMap extends FragmentActivity implements View.OnTouchListener, V
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+        globalState = (GlobalState) getApplicationContext();
+        btSocket = globalState.getBluetoothSocket();
+
         txtStarting = (EditText)findViewById(R.id.txt_starting);
         txtDestination = (EditText)findViewById(R.id.txt_destination);
         btnHire = (Button)findViewById(R.id.btn_hire);
@@ -62,7 +71,19 @@ public class demoMap extends FragmentActivity implements View.OnTouchListener, V
         txtStarting.setOnTouchListener(this);
         txtDestination.setOnTouchListener(this);
         btnHire.setOnClickListener(this);
+    }
 
+    @Override
+    protected void onDestroy() {
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("S|0|0|0!".getBytes());
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+        Log.d("STATE", "0");
+        super.onDestroy();
     }
 
     @Override
@@ -215,28 +236,30 @@ public class demoMap extends FragmentActivity implements View.OnTouchListener, V
 //        startActivity(demoIntent);
         switch(evalue) {
             case 1:
-                if (markerDestination != null && marker.getTitle().matches(markerDestination.getTitle())){
+                if (globalState.getMarkerDestination() != null && marker.getTitle().matches(globalState.getMarkerDestination().getTitle())){
                     toastMsg("Starting point and destination can't be the same");
                     return;
                 }
                 txtStarting.setText(marker.getTitle());
-                if (markerStart != null){
-                    markerStart.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
+                if (globalState.getStart() != null){
+                    globalState.getMarkerStart().setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
                 }
-                markerStart = marker;
+                globalState.setMarkerStart(marker);
+                globalState.setStart(marker.getTitle());
                 txtDestination.requestFocus();
                 evalue = 2;
                 break;
             case 2:
-                if (markerStart != null && marker.getTitle().matches(markerStart.getTitle())){
+                if (globalState.getMarkerStart() != null && marker.getTitle().matches(globalState.getMarkerStart().getTitle())){
                     toastMsg("Starting point and destination can't be the same");
                     return;
                 }
                 txtDestination.setText(marker.getTitle());
-                if (markerDestination != null){
-                    markerDestination.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
+                if (globalState.getMarkerDestination() != null){
+                    globalState.getMarkerDestination().setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
                 }
-                markerDestination = marker;
+                globalState.setMarkerDestination(marker);
+                globalState.setDestination(marker.getTitle());
                 break;
             default:
                 break;

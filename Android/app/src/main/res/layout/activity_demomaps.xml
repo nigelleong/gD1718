@@ -28,46 +28,65 @@
         android:background="@drawable/navigationbox"
         android:layout_margin="10dp">
 
-        <EditText
-            android:id="@+id/txt_starting"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentRight="true"
-            android:layout_marginLeft="20dp"
-            android:layout_marginRight="20dp"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="10dp"
-            android:textColor="#7fc4c6"
-            android:background="@drawable/edittextbackground"
-            android:hint="Choose starting point"
-            android:inputType="textPersonName" />
+        <RelativeLayout
+            android:id="@+id/container_starting"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-        <EditText
-            android:id="@+id/txt_destination"
-            android:layout_width="wrap_content"
+            <EditText
+                android:id="@+id/txt_starting"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentRight="true"
+                android:layout_marginLeft="20dp"
+                android:layout_marginRight="20dp"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="10dp"
+                android:textColor="#7fc4c6"
+                android:background="@drawable/edittextbackground"
+                android:hint="Choose starting point"
+                android:inputType="textPersonName"
+                android:drawableLeft="@drawable/ic_panorama_fish_eye_24dp"
+                android:drawablePadding="5dp"/>
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/container_destination"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentRight="true"
-            android:layout_below="@+id/txt_starting"
-            android:layout_marginBottom="10dp"
-            android:layout_marginLeft="20dp"
-            android:layout_marginRight="20dp"
-            android:textColor="#7fc4c6"
-            android:background="@drawable/edittextbackground"
-            android:inputType="textPersonName"
-            android:hint="Choose destination"/>
+            android:layout_below="@+id/container_starting">
+
+            <EditText
+                android:id="@+id/txt_destination"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentRight="true"
+                android:layout_marginBottom="10dp"
+                android:layout_marginLeft="20dp"
+                android:layout_marginRight="20dp"
+                android:textColor="#7fc4c6"
+                android:background="@drawable/edittextbackground"
+                android:inputType="textPersonName"
+                android:hint="Choose destination"
+                android:drawableLeft="@drawable/ic_place_black_24dp"
+                android:drawablePadding="5dp"/>
+
+        </RelativeLayout>
 
         <Button
             android:id="@+id/btn_hire"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="  Hire a ride"
+            android:text="Hire a ride"
+            android:drawablePadding="5dp"
             android:drawableLeft="@drawable/ic_directions_bus_black_24dp"
             android:layout_marginTop="10dp"
             android:layout_marginBottom="20dp"
             android:layout_centerHorizontal="true"
-            android:layout_below="@+id/txt_destination"
+            android:layout_below="@+id/container_destination"
             android:background="@drawable/whiteeclipse"/>
 
     </RelativeLayout>

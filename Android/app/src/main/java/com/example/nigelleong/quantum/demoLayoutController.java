@@ -17,10 +17,12 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.nigelleong.quantum.helper.GlobalState;
 import com.example.nigelleong.quantum.model.CommunicationModuleInterface;
 import com.example.nigelleong.quantum.model.PrivateModuleInterface;
 import com.example.nigelleong.quantum.model.EfficiencyModuleInferface;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,7 +31,7 @@ public class demoLayoutController extends AppCompatActivity {
 //    implements View.OnClickListener
 
     BluetoothSocket btSocket;
-    BluetoothSocketHelper bluetoothSocketHelper;
+    GlobalState globalState;
     String destination;
 
     private TabLayout tabLayout;
@@ -42,9 +44,8 @@ public class demoLayoutController extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_demolayout);
 
-        bluetoothSocketHelper = ((BluetoothSocketHelper) getApplicationContext());
-        btSocket = bluetoothSocketHelper.getBluetoothSocket();
-        Log.d("demoLayoutController",btSocket.toString());
+        globalState = ((GlobalState) getApplicationContext());
+        btSocket = globalState.getBluetoothSocket();
 
         viewPager = (ViewPager) findViewById(R.id.viewpager);
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
@@ -61,28 +62,16 @@ public class demoLayoutController extends AppCompatActivity {
             tab.setCustomView(adapter.getTabView(i));
         }
 
-        //Switch to DRIVING (state = 1);
-//        if (btSocket!=null) {
-//            try {
-//                btSocket.getOutputStream().write("S|1|0|0!".getBytes());
-//            } catch (IOException e) {
-//                toastMsg("Error");
-//            }
-//        }
-//        Log.d("STATE", "1");
-
+        //Switch to DRIVING (state = 4);
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("S|4|0|0!".getBytes());
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+        Log.d("STATE", "4");
     }
-
-//    @Override
-//    public void onClick(View view) {
-//        switch(view.getId()) {
-////            case R.id.:
-////                robotGoUp();
-////                break;
-//            default:
-//                break;
-//        }
-//    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
