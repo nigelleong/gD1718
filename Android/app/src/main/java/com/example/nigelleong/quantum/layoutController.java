@@ -21,6 +21,7 @@ import java.io.IOException;
 public class layoutController extends AppCompatActivity implements View.OnClickListener {
 
     Button btnPrivacy, btnEfficiency, btnCommunication;
+    Button btnOdo, btnOdoIMU, btnOdoIMUNFC;
 
     BluetoothSocket btSocket;
     GlobalState globalState;
@@ -41,10 +42,17 @@ public class layoutController extends AppCompatActivity implements View.OnClickL
         btnPrivacy = (Button)findViewById(R.id.btn_privacy);
         btnEfficiency = (Button)findViewById(R.id.btn_efficiency);
         btnCommunication = (Button)findViewById(R.id.btn_communication);
+        btnOdo = (Button)findViewById(R.id.btn_odo);
+        btnOdoIMU = (Button)findViewById(R.id.btn_odo_imu);
+        btnOdoIMUNFC = (Button)findViewById(R.id.btn_odo_imu_nfc);
 
         btnPrivacy.setOnClickListener(this);
         btnEfficiency.setOnClickListener(this);
         btnCommunication.setOnClickListener(this);
+        btnOdo.setOnClickListener(this);
+        btnOdoIMU.setOnClickListener(this);
+        btnOdoIMUNFC.setOnClickListener(this);
+
 
         //Switch to LAYOUTS (state = 4);
         if (btSocket!=null) {
@@ -82,6 +90,15 @@ public class layoutController extends AppCompatActivity implements View.OnClickL
             case R.id.btn_communication:
                 request_Communication();
                 break;
+            case R.id.btn_odo:
+                setToOdo();
+                break;
+            case R.id.btn_odo_imu:
+                setToOdoIMU();
+                break;
+            case R.id.btn_odo_imu_nfc:
+                setToOdoIMUNFC();
+                break;
             default:
                 break;
         }
@@ -114,6 +131,39 @@ public class layoutController extends AppCompatActivity implements View.OnClickL
             try {
                 btSocket.getOutputStream().write("K|2|0|0!".getBytes());
                 toastMsg("Command Communication Mode sent");
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+    }
+
+    private void setToOdo() {
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("L|0|0|0!".getBytes());
+                toastMsg("Localization method: odometry");
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+    }
+
+    private void setToOdoIMU() {
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("L|1|0|0!".getBytes());
+                toastMsg("Localization method: Odometry + IMU");
+            } catch (IOException e) {
+                toastMsg("Error");
+            }
+        }
+    }
+
+    private void setToOdoIMUNFC() {
+        if (btSocket!=null) {
+            try {
+                btSocket.getOutputStream().write("L|2|0|0!".getBytes());
+                toastMsg("Localization method: Odometry + IMU + NFC");
             } catch (IOException e) {
                 toastMsg("Error");
             }

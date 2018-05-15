@@ -139,14 +139,6 @@ const double PID_dis_theta = 0.3;
 const float Pose_error_xy = 10;
 const float Pose_error_theta = 0.01;
 
-// Print settings
-bool print_to_COM = true;// true; //Print data da serial port (computer)
-bool print_commands = false;
-// Arguments from remote control can either be in local frame or global frame:
-bool remote_local = true;
-// Use NFC tags for angle estimation
-bool NFC_angle = false;
-float Reader_Offset[3] = {0,-80,0};
 
 // States of the robot
 int state;
@@ -177,6 +169,22 @@ int state;
  */
 
 #include <Folding_Functions.h>
+
+/************************************************************************
+ * ************ SETTINGS ************************************************
+ ***********************************************************************/
+// Print settings
+bool print_to_COM = true;// true; //Print data da serial port (computer)
+bool print_commands = false;
+// Arguments from remote control can either be in local frame or global frame:
+bool remote_local = true;
+// Use NFC tags for angle estimation
+bool NFC_angle = false;
+float Reader_Offset[3] = {0,-80,0};
+//Layout Settings
+float pos_privacy[3] = {1,1,1};
+float pos_efficiency[3] = {1,1,1};
+float pos_communication[3] = {1,1,1};
 void setup() {
   // Set states, layout and localization method
   change_state(0);
@@ -204,7 +212,6 @@ void setup() {
 
   // Initialize Bluetooth
   BT.begin(9600);
-  Serial.print("done");
   // Initialize serial communications with Computer
   Serial.begin(38400);
   
@@ -513,6 +520,7 @@ void loop() {
     ////////////////////////////////////////////////////////////
     case 4:
     {
+      Robot_Pose.s
       // Waiting for commands
       read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);
       //First character of command
@@ -1382,11 +1390,7 @@ void set_global_pose(float arg1,float arg2,float arg3){
  * 2 = communication
  */
 
-void change_layout(int arg1){
-  float pos_privacy[3] = {1,1,1};
-  float pos_efficiency[3] = {1,1,1};
-  float pos_communication[3] = {1,1,1};
-  
+void change_layout(int arg1){ 
   switch(layout){
     case 0:
     {
