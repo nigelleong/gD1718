@@ -55,14 +55,14 @@
             android:text="Odo" />
 
         <Button
-            android:id="@+id/btn_odoIMU"
+            android:id="@+id/btn_odo_imu"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Odo + IMU" />
 
         <Button
-            android:id="@+id/btn_odoIMUNFC"
+            android:id="@+id/btn_odo_imu_nfc"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="1"

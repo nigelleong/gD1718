@@ -167,7 +167,7 @@ public class PIDController extends AppCompatActivity implements View.OnClickList
             case R.id.btn_40_100_m200:
                 if (btSocket!=null) {
                     try {
-                        btSocket.getOutputStream().write("T|400|1000|-200!".getBytes());
+                        btSocket.getOutputStream().write("T|400|1000|160!".getBytes());
                     } catch (IOException e) {
                         toastMsg("Error");
                     }

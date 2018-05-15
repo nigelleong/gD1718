@@ -23,7 +23,9 @@ import java.io.IOException;
 public class standbyController extends AppCompatActivity implements View.OnClickListener {
 
     Button btnDriving, btnFolding, btnAnalog, btnLayouts, btnPID, btnSubmitPose;
+    Button btnPrivacy;
     EditText txtPoseX, txtPoseY, txtPoseRot;
+
 
     String pose_x, pose_y, pose_rot;
 
@@ -50,6 +52,7 @@ public class standbyController extends AppCompatActivity implements View.OnClick
         btnLayouts = (Button)findViewById(R.id.btn_layouts);
         btnPID = (Button)findViewById(R.id.btn_PID);
         btnSubmitPose = (Button) findViewById(R.id.btn_submit_pose);
+        btnPrivacy = (Button) findViewById(R.id.btn_privacy);
 
         txtPoseX = (EditText) findViewById(R.id.txt_pose_x_value);
         txtPoseY = (EditText) findViewById(R.id.txt_pose_y_value);
@@ -61,6 +64,7 @@ public class standbyController extends AppCompatActivity implements View.OnClick
         btnLayouts.setOnClickListener(this);
         btnPID.setOnClickListener(this);
         btnSubmitPose.setOnClickListener(this);
+        btnPrivacy.setOnClickListener(this);
 
         //Switch to STANDBY (state = 0);
         if (btSocket != null) {
@@ -117,6 +121,15 @@ public class standbyController extends AppCompatActivity implements View.OnClick
                             txtPoseY.setText("");
                             txtPoseRot.setText("");
                         }
+                    } catch (IOException e) {
+                        toastMsg("Error");
+                    }
+                }
+                break;
+            case R.id.btn_privacy:
+                if (btSocket!=null) {
+                    try {
+                        btSocket.getOutputStream().write("P|100|540|-90!".getBytes());
                     } catch (IOException e) {
                         toastMsg("Error");
                     }

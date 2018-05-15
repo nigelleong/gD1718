@@ -182,9 +182,15 @@ bool remote_local = true;
 bool NFC_angle = false;
 float Reader_Offset[3] = {0,-80,0};
 //Layout Settings
-float pos_privacy[3] = {1,1,1};
-float pos_efficiency[3] = {1,1,1};
-float pos_communication[3] = {1,1,1};
+float pos_privacy[3] = {100,540,-pi/2};
+float pos_efficiency[3] = {100,540,-pi/2};
+float pos_communication[3] = {1000, 600, 0};
+//Do Pose corrections during movement to target
+bool pose_correction = false;
+/************************************************************************
+ * **********************************************************************
+ ***********************************************************************/
+ 
 void setup() {
   // Set states, layout and localization method
   change_state(0);
@@ -309,7 +315,7 @@ void loop() {
         }
         case 'P': // Set global pose according to arguments
         {
-          set_global_pose((float)arg1,(float)arg2,(float)arg3);
+          set_global_pose((float)arg1,(float)arg2,(float)arg3*pi/180);
           print_globalPose();
           break;
         }
@@ -520,7 +526,6 @@ void loop() {
     ////////////////////////////////////////////////////////////
     case 4:
     {
-      Robot_Pose.s
       // Waiting for commands
       read_BT_command(command_buffer, &command, &arg1, &arg2, &arg3);
       //First character of command
@@ -533,6 +538,11 @@ void loop() {
         case 'K': 
         {
           change_layout(arg1);
+          break;
+        }
+        case 'L': // Change localization method (first argument)
+        {
+          change_loc_method(arg1);
           break;
         }
       }
@@ -1087,8 +1097,7 @@ void localize_Robot(){
       }
       else{
         read_tag(&tag_x,&tag_y);
-        KalmanNFC.newTagdetected((float)tag_x, (float)tag_y);
-        tag_detected = true;
+        KalmanNFC.newTagdetected((float)tag_x, (float)tag_y);        
         KalmanNFC.offset_Reader(Robot_Pose);
         if(print_to_COM){
           Serial.print("Tag: x = ");
@@ -1098,6 +1107,9 @@ void localize_Robot(){
           Serial.println("   detected");
         }
         if(KalmanNFC.tag_det[1]!=KalmanNFC.tag_prev[1]&&KalmanNFC.tag_det[0]!=KalmanNFC.tag_prev[0]){
+          if(pose_correction){
+            tag_detected = true;
+          }
           KalmanNFC.orientationRobot(Robot_Pose);
           KalmanNFC.calcNewState(Robot_Pose);
           //debug_Kalman_NFC();
@@ -1492,6 +1504,7 @@ void change_layout(int arg1){
           Robot_Pose.globalPose_should[0] = pos_privacy[0];
           Robot_Pose.globalPose_should[1] = pos_privacy[1];
           Robot_Pose.globalPose_should[2] = pos_privacy[2];
+          GoToTarget();
           layout = 0;
           if(print_to_COM){
             Serial.println("Layout changed to Privacy Mode");
@@ -1505,6 +1518,7 @@ void change_layout(int arg1){
           Robot_Pose.globalPose_should[0] = pos_efficiency[0];
           Robot_Pose.globalPose_should[1] = pos_efficiency[1];
           Robot_Pose.globalPose_should[2] = pos_efficiency[2];
+          GoToTarget();
           do_Wings(2,1);
           do_Seats(1,1);
           layout = 1;
@@ -1673,10 +1687,16 @@ void GoToTarget(){
 
 bool activate_Magnets(){
   digitalWrite(magnets,LOW);
+  if(print_to_COM){
+    Serial.println("Magnets activated");
+  }
   return true;
 }
 bool deactivate_Magnets(){
   digitalWrite(magnets,HIGH);
+  if(print_to_COM){
+    Serial.println("Magnets deactivated");
+  }
   return false;
 }
 
