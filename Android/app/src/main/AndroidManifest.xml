@@ -44,7 +44,8 @@
             android:label="foldingController"></activity>
         <activity
             android:name=".analogController"
-            android:label="analogController"></activity>
+            android:label="analogController"
+            android:screenOrientation="landscape"></activity>
         <activity
             android:name=".layoutController"
             android:label="layoutController"></activity>
