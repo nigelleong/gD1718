@@ -1557,6 +1557,7 @@ void change_layout(int arg1){
 void GoToTarget(){
   Magnets_ACTIVE = deactivate_Magnets();
   DC_STOP = false;
+  tag_detected = false;
   // Print header for localization results
   if(print_to_COM){
     switch(loc_method){
