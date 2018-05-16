@@ -37,7 +37,7 @@ const int PID_sample_time = 50;
 
 // Steps, Step times and step delays for
 const int steps_Wings = 49*51;
-const int steps_Seats = 1100; 
+const int steps_Seats = 1150; 
 const int stepTime_Wings = 8000; // With gearbox:8000; //Microseconds
 const int stepDelay_Wings = 1; // With gearbox: 1; //Milliseconds
 const int stepTime_Seats = 8000; // Microseconds
@@ -135,9 +135,6 @@ const double v_max_theta = 0.6;
 // Distances/angle at which PID takes over
 const double PID_dis_xy = 50;
 const double PID_dis_theta = 0.3;
-// Allowed Pose Error:
-const float Pose_error_xy = 10;
-const float Pose_error_theta = 0.01;
 
 
 // States of the robot
@@ -184,9 +181,14 @@ float Reader_Offset[3] = {0,-80,0};
 //Layout Settings
 float pos_privacy[3] = {100,540,-pi/2};
 float pos_efficiency[3] = {100,540,-pi/2};
-float pos_communication[3] = {1000, 600, 0};
+float pos_communication[3] = {1000, 480, 0};
 //Do Pose corrections during movement to target
+bool pose_correction_NFC = false;
 bool pose_correction = false;
+// Allowed Pose Error:
+const float Pose_error_xy = 20;
+const float Pose_error_theta = 0.01;
+
 /************************************************************************
  * **********************************************************************
  ***********************************************************************/
@@ -545,6 +547,40 @@ void loop() {
           change_loc_method(arg1);
           break;
         }
+        case 'P': //ONLY HERE: 'P' changes current layout and pose
+        {
+          layout = arg1;
+          switch(arg1){
+            case 0:
+            {
+              set_global_pose(pos_privacy[0], pos_privacy[1], pos_privacy[2]);
+              if(print_to_COM)
+              {
+                  Serial.println("Current layout is changed to PRIVACY");
+              }
+              break;
+            }
+            case 1:
+            {
+              set_global_pose(pos_efficiency[0], pos_efficiency[1], pos_efficiency[2]);
+              if(print_to_COM)
+              {
+                  Serial.println("Current layout is changed to EFFICIENCY");
+              }
+              break;
+            }
+            case 2:
+            {
+              set_global_pose(pos_communication[0], pos_communication[1], pos_communication[2]);
+              if(print_to_COM)
+              {
+                  Serial.println("Current layout is changed to COMMUNICATION");
+              }
+              break;
+            }
+          }
+          break;
+        }
       }
       break;
     }
@@ -807,7 +843,7 @@ void change_state(int arg1){
       break;
     }
     case 3: 
-    {
+    { 
       change_loc_method(2);
       break;
     }      
@@ -1107,7 +1143,7 @@ void localize_Robot(){
           Serial.println("   detected");
         }
         if(KalmanNFC.tag_det[1]!=KalmanNFC.tag_prev[1]&&KalmanNFC.tag_det[0]!=KalmanNFC.tag_prev[0]){
-          if(pose_correction){
+          if(pose_correction_NFC){
             tag_detected = true;
           }
           KalmanNFC.orientationRobot(Robot_Pose);
@@ -1578,9 +1614,9 @@ void GoToTarget(){
   localize_Robot();
   Robot_Pose.calctoGo_local();
 
-  while((fabs(Robot_Pose.toGo_local[0])>Pose_error_xy||fabs(Robot_Pose.toGo_local[1])>Pose_error_xy )){
+  int count_correction = 0;
+  while((fabs(Robot_Pose.toGo_local[0])>Pose_error_xy||fabs(Robot_Pose.toGo_local[1])>Pose_error_xy )&&count_correction<1){
     Robot_Pose.calctoGo_local();
-    
     // ROTATE to head to target
     DC_STOP = false;
     PID_heading.Initialize();
@@ -1646,6 +1682,9 @@ void GoToTarget(){
       DC_STOP = allWheelsSTOP();
     }
     tag_detected = false;
+    if(!pose_correction){
+      count_correction++;
+    }
   }
   
 

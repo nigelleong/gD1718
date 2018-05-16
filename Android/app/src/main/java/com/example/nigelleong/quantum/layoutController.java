@@ -22,6 +22,7 @@ public class layoutController extends AppCompatActivity implements View.OnClickL
 
     Button btnPrivacy, btnEfficiency, btnCommunication;
     Button btnOdo, btnOdoIMU, btnOdoIMUNFC;
+    Button btnPosPriv, btnPosEff, btnPosComm;
 
     BluetoothSocket btSocket;
     GlobalState globalState;
@@ -45,6 +46,9 @@ public class layoutController extends AppCompatActivity implements View.OnClickL
         btnOdo = (Button)findViewById(R.id.btn_odo);
         btnOdoIMU = (Button)findViewById(R.id.btn_odo_imu);
         btnOdoIMUNFC = (Button)findViewById(R.id.btn_odo_imu_nfc);
+        btnPosPriv = (Button)findViewById(R.id.btn_pos_priv);
+        btnPosEff = (Button)findViewById(R.id.btn_pos_eff);
+        btnPosComm = (Button)findViewById(R.id.btn_pos_comm);
 
         btnPrivacy.setOnClickListener(this);
         btnEfficiency.setOnClickListener(this);
@@ -52,6 +56,9 @@ public class layoutController extends AppCompatActivity implements View.OnClickL
         btnOdo.setOnClickListener(this);
         btnOdoIMU.setOnClickListener(this);
         btnOdoIMUNFC.setOnClickListener(this);
+        btnPosPriv.setOnClickListener(this);
+        btnPosEff.setOnClickListener(this);
+        btnPosComm.setOnClickListener(this);
 
 
         //Switch to LAYOUTS (state = 4);
@@ -99,6 +106,35 @@ public class layoutController extends AppCompatActivity implements View.OnClickL
             case R.id.btn_odo_imu_nfc:
                 setToOdoIMUNFC();
                 break;
+
+            case R.id.btn_pos_priv:
+                if (btSocket!=null) {
+                    try {
+                        btSocket.getOutputStream().write("P|0|0|0!".getBytes());
+                    } catch (IOException e) {
+                        toastMsg("Error");
+                    }
+                }
+                break;
+            case R.id.btn_pos_eff:
+                if (btSocket!=null) {
+                    try {
+                        btSocket.getOutputStream().write("P|1|0|0!".getBytes());
+                    } catch (IOException e) {
+                        toastMsg("Error");
+                    }
+                }
+                break;
+            case R.id.btn_pos_comm:
+                if (btSocket!=null) {
+                    try {
+                        btSocket.getOutputStream().write("P|2|0|0!".getBytes());
+                    } catch (IOException e) {
+                        toastMsg("Error");
+                    }
+                }
+                break;
+
             default:
                 break;
         }
